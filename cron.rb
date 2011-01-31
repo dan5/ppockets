@@ -103,8 +103,7 @@ class Game < Sequel::Model
 end
 
 # ----------------------------
-
-def match_make
+def delete_schedules
   entry_players = Player.all
   while entry_players.count >= 2 do
     schedule = Schedule.create(
@@ -112,6 +111,14 @@ def match_make
       :away_player_id => entry_players.shift.id,
     )
     3.times {|day| Game.create(:schedule_id => schedule.id, :day => day + 1) }
+  end
+end
+
+def delete_schedules
+  puts current_method
+  Schedule.all.each do |e|
+    game = e.next_game
+    e.destroy unless game
   end
 end
 
