@@ -25,7 +25,7 @@ class Player < Sequel::Model
     Int :num_commands, :default => 1
     Int :grade, :default => 0
     Int :points, :default => 0
-    Timestamp :last_login_time
+    Timestamp :loged_at
   }
   create_table unless table_exists?
 
@@ -67,6 +67,7 @@ class Card < Sequel::Model
 end 
 
 class Schedule < Sequel::Model
+  one_to_many :games
   set_schema {
     primary_key :id
     foreign_key :home_player_id, :players
@@ -75,31 +76,57 @@ class Schedule < Sequel::Model
     unique [:home_player_id, :away_player_id]
   }
   create_table unless table_exists?
+
+  def next_name
+    games = Game.filter(:schedule_id => self.id).order(:day) # todo
+    games.filter(:played? => false).limit(1).first
+  end
+
+  def dump_string
+    "id: #{id}" +
+    games.map {|e| " day(#{e.day}, #{e.played? ? 'x' : '-'})" }.join(',')
+  end
 end
       
 class Game < Sequel::Model
+  many_to_one :schedules
   set_schema {
     primary_key :id
     foreign_key :schedule_id, :schedules
     Int :day
     Bool :played?, :default => false
     Text :logs
+    Timestamp :created_at
     unique [:schedule_id, :day]
   }
   create_table unless table_exists?
 end
 
+# ----------------------------
+
 def match_make
   entry_players = Player.all
   while entry_players.count >= 2 do
-    Schedule.create({
+    schedule = Schedule.create(
       :home_player_id => entry_players.shift.id,
       :away_player_id => entry_players.shift.id,
-    })
+    )
+    3.times {|day| Game.create(:schedule_id => schedule.id, :day => day + 1) }
   end
 end
 
-# ----------------------------
+def do_games
+  puts "--- do games -----------------"
+  Schedule.filter(:ready? => true).each do |schedule|
+    game = schedule.next_name
+    game.update(:played? => true)
+  end
+end
+
+# -- debug ---------------------
+def debug_dump_schedules
+  puts Schedule.all.map(&:dump_string)
+end
 
 def debug_create_players(n)
   n.times do |i|
@@ -108,8 +135,10 @@ def debug_create_players(n)
   end
 end
 
-debug_create_players(10)
-p Card.count
+debug_create_players(2)
 match_make
 
-p Schedule.all
+3.times do
+  do_games
+  debug_dump_schedules
+end
