@@ -66,11 +66,14 @@ class Card < Sequel::Model
   }
 end 
 
-def initialize_player(user)
-  player = Player.find_or_create(:user_id => user.id)
+def debug_create_players(n)
+  n.times do |i|
+    user = User.create(:name => "testman%04d" % i)
+    player = Player.find_or_create(:user_id => user.id)
+  end
 end
 
-user = User.create
-player = initialize_player(user)
-p player
-p player.cards
+debug_create_players(10)
+p Card.count
+
+
