@@ -131,8 +131,8 @@ class League < Sequel::Model
   end
 
   def dump_string
-    "id: #{id}" +
-    games.map {|e| " game_count(#{e.game_count}, #{e.played? ? 'x' : '-'})" }.join(',')
+    "id: #{id} " +
+    games.map {|e| "(#{e.game_count} #{e.played? ? 'x' : '-'})" }.join(' ')
   end
 end
       
@@ -181,7 +181,6 @@ def update_leagues
   League.all.each do |league|
     league.update(:game_count => league.game_count + 1) # todo
   end
-  p League.all
 end
 
 def do_games
