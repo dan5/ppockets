@@ -34,6 +34,7 @@ class Player < Sequel::Model
     foreign_key :schedule_id, :schedules
     Bool :npc?, :default => false
     Bool :home?
+    Bool :entry?
     Int :jewel, :default => 1000
     Int :num_commands, :default => 1
     Int :grade, :default => 0
@@ -47,6 +48,10 @@ class Player < Sequel::Model
     5.times do |i|
       Card.create(:player_id => self.id, :position => i)
     end
+  end
+
+  def validate
+    raise if entry? && schedule_id
   end
 end 
 
@@ -84,7 +89,9 @@ class Schedule < Sequel::Model
   one_to_many :players
   set_schema {
     primary_key :id
-    Bool :ready?, :default => true
+    Bool :ready?, :default => false
+    Int :day, :default => 0
+    Int :days_max
     #unique [:home_player_id, :away_player_id]
   }
   create_table unless table_exists?
@@ -117,13 +124,16 @@ end
 # ----------------------------
 def create_schedules
   dump_method_name
+  days_max = 5
   players = Player.filter(:schedule_id => nil).all
   while players.count >= 2 do
-    schedule = Schedule.create
+    schedule = Schedule.create(:days_max => days_max)
+    puts "Schedule.create: id => #{schedule.id}"
     players.shift.update(:schedule_id => schedule.id, :home? => true)
     players.shift.update(:schedule_id => schedule.id, :home? => false)
-    3.times {|day| Game.create(:schedule_id => schedule.id, :day => day + 1) }
+    days_max.times {|day| Game.create(:schedule_id => schedule.id, :day => day + 1) }
   end
+  p players.count
 end
 
 def delete_schedules
@@ -136,9 +146,17 @@ def delete_schedules
   end
 end
 
+def update_schedules
+  dump_method_name
+  Schedule.all.each do |schedule|
+    schedule.update(:day => schedule.day + 1) # todo
+  end
+  p Schedule.all
+end
+
 def do_games
   dump_method_name
-  Schedule.filter(:ready? => true).each do |schedule|
+  Schedule.filter('day > 0').each do |schedule|
     game = schedule.next_game
     game.update(:played? => true)
   end
@@ -156,11 +174,12 @@ def debug_create_players(n)
   end
 end
 
-debug_create_players(5)
+debug_create_players(7)
 
 15.times do
   create_schedules
   do_games
   debug_dump_schedules
   delete_schedules
+  update_schedules
 end
