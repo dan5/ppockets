@@ -158,7 +158,7 @@ end
 
 debug_create_players(5)
 
-5.times do
+15.times do
   create_schedules
   do_games
   debug_dump_schedules
