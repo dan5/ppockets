@@ -66,6 +66,41 @@ class Card < Sequel::Model
   }
 end 
 
+class Schedule < Sequel::Model
+  set_schema {
+    primary_key :id
+    foreign_key :home_player_id, :players
+    foreign_key :away_player_id, :players
+    Bool :ready?, :default => true
+    unique [:home_player_id, :away_player_id]
+  }
+  create_table unless table_exists?
+end
+      
+class Game < Sequel::Model
+  set_schema {
+    primary_key :id
+    foreign_key :schedule_id, :schedules
+    Int :day
+    Bool :played?, :default => false
+    Text :logs
+    unique [:schedule_id, :day]
+  }
+  create_table unless table_exists?
+end
+
+def match_make
+  entry_players = Player.all
+  while entry_players.count >= 2 do
+    Schedule.create({
+      :home_player_id => entry_players.shift.id,
+      :away_player_id => entry_players.shift.id,
+    })
+  end
+end
+
+# ----------------------------
+
 def debug_create_players(n)
   n.times do |i|
     user = User.create(:name => "testman%04d" % i)
@@ -75,5 +110,6 @@ end
 
 debug_create_players(10)
 p Card.count
+match_make
 
-
+p Schedule.all
