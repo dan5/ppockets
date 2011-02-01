@@ -26,7 +26,7 @@ class GameEnvironment < Sequel::Model
     self.create
   end
 end 
-GameEnv = DB[:game_environments].find(:id => 1)
+GameEnv = GameEnvironment.find(:id => 1)
     
 class User < Sequel::Model
   one_to_one :player
@@ -63,9 +63,7 @@ class Player < Sequel::Model
   }
   create_table unless table_exists?
 
-  def name
-    user.name
-  end
+  def name() user.name end
 
   def after_create
     super
@@ -77,61 +75,6 @@ class Player < Sequel::Model
   def validate
     #raise if entry? && league_id
   end
-end 
-
-class TotalResult < Sequel::Model
-  many_to_one :player
-  set_schema {
-    primary_key :id
-    foreign_key :player_id, :players
-    Int :grade
-    Int :win, :default => 0
-    Int :lose, :default => 0
-    Int :draw, :default => 0
-  }
-  create_table unless table_exists?
-end
-
-class Result < Sequel::Model
-  many_to_one :player
-  set_schema {
-    primary_key :id
-    foreign_key :player_id, :players
-    foreign_key :league_id, :leagues
-    Int :win, :default => 0
-    Int :lose, :default => 0
-    Int :draw, :default => 0
-  }
-  create_table unless table_exists?
-end
-
-class Card < Sequel::Model
-  many_to_one :player
-  set_schema {
-    primary_key :id
-    foreign_key :player_id, :players
-    String :name
-    Int :position
-    Int :off_plus, :default => 0
-    Int :def_plus, :default => 0
-    Int :agi_plus, :default => 0
-    Int :life_plus, :default => 0
-  }
-  create_table unless table_exists?
-
-  def after_create
-    super
-    self.name = Values.keys.sample
-    self.save
-  end
-
-  Values = {
-    'keroro' => [],
-    'tamama' => [],
-    'giroro' => [],
-    'dororo' => [],
-    'kururu' => [],
-  }
 end 
 
 class League < Sequel::Model
@@ -184,11 +127,65 @@ class Game < Sequel::Model
   end
 end
 
+class Result < Sequel::Model
+  many_to_one :player
+  set_schema {
+    primary_key :id
+    foreign_key :player_id, :players
+    foreign_key :league_id, :leagues
+    Int :win, :default => 0
+    Int :lose, :default => 0
+    Int :draw, :default => 0
+  }
+  create_table unless table_exists?
+end
+
+class TotalResult < Sequel::Model
+  many_to_one :player
+  set_schema {
+    primary_key :id
+    foreign_key :player_id, :players
+    Int :grade
+    Int :win, :default => 0
+    Int :lose, :default => 0
+    Int :draw, :default => 0
+  }
+  create_table unless table_exists?
+end
+
+class Card < Sequel::Model
+  many_to_one :player
+  set_schema {
+    primary_key :id
+    foreign_key :player_id, :players
+    String :name
+    Int :position
+    Int :off_plus, :default => 0
+    Int :def_plus, :default => 0
+    Int :agi_plus, :default => 0
+    Int :life_plus, :default => 0
+  }
+  create_table unless table_exists?
+
+  def after_create
+    super
+    self.name = Values.keys.sample
+    self.save
+  end
+
+  Values = {
+    'keroro' => [],
+    'tamama' => [],
+    'giroro' => [],
+    'dororo' => [],
+    'kururu' => [],
+  }
+end 
+
 # ----------------------------
 def create_leagues
   dump_method_name
-  env = GameEnv.first
-  league = League.create(:max_game_count => env[:num_games])
+  league = League.create(:max_game_count => GameEnv.num_games)
   puts "    create_league id => #{league.id}"
 end
 
