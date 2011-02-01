@@ -98,8 +98,8 @@ class League < Sequel::Model
   end
 end
 WaitingLeague = League.filter(:status => 0) # todo
-OpenedLeague = League.filter(:status => 1) # todo
-ClosedLeague = League.filter(:status => 2) # todo
+OpenedLeague = League.filter(:status => 1)
+ClosedLeague = League.filter(:status => 2)
       
 class Game < Sequel::Model
   many_to_one :leagues
@@ -206,7 +206,7 @@ end
 def close_leagues
   dump_method_name
   OpenedLeague.each do |l|
-    games = Game.filter(:league_id => l.id, :played? => false)
+    games = l.games_dataset.filter(:played? => false)
     next if games.count > 0
     l.players.each {|e| e.update(:entry? => false) }
     l.update(:status => 2)
@@ -229,7 +229,7 @@ end
 def do_games
   dump_method_name
   League.filter('game_count > 0').each do |l|
-    games = Game.filter(:league_id => l.id, :game_count => l.game_count)
+    games = l.games_dataset.filter(:game_count => l.game_count)
     games.each {|e| do_game(e) }
   end
 end
