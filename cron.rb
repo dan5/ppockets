@@ -36,8 +36,9 @@ end
 class Player < Sequel::Model
   many_to_one :user
   one_to_many :cards
-  one_to_many :player
   many_to_many :leagues
+  one_to_many :home_games, :class => :Game, :key => :home_player_id
+  one_to_many :away_games, :class => :Game, :key => :away_player_id
   set_schema {
     primary_key :id
     foreign_key :user_id, :users
@@ -79,7 +80,6 @@ class League < Sequel::Model
     Int :max_players, :default => 2
     Int :stage
     Int :grade
-    #unique [:home_player_id, :away_player_id]
   }
   create_table unless table_exists?
 
@@ -93,6 +93,8 @@ ClosedLeague = League.filter(:status => 2)
       
 class Game < Sequel::Model
   many_to_one :leagues
+  many_to_one :home_player, :class => :Player
+  many_to_one :away_player, :class => :Player
   set_schema {
     primary_key :id
     foreign_key :league_id, :leagues
@@ -103,14 +105,14 @@ class Game < Sequel::Model
     Int :game_count
     Bool :played?, :default => false
     Timestamp :created_at
-    #unique [:league_id, :game_count]
-    #unique [:league_id, :game_count, :home_player_id]
-    #unique [:league_id, :game_count, :away_player_id]
+    unique [:league_id, :game_count]
   }
   create_table unless table_exists?
 
-  def home_player() Player.find(:id => home_player_id) end
-  def away_player() Player.find(:id => away_player_id) end
+
+  def validate
+    home_player_id != away_player_id or raise
+  end
 
   def dump_string
     "(#{home_player.name} vs #{away_player.name} #{game_count}#{played? ? 'x' : '-'})"
@@ -182,7 +184,7 @@ end
 def open_leagues
   WaitingLeague.all.select{|l| l.players.count == l.max_players }.each do |league|
     league.max_game_count.times do |game_count|
-      Game.create(:league_id => league.id,
+      game = Game.create(:league_id => league.id,
                   :game_count => game_count + 1,
                   :home_player_id => league.players[0].id,
                   :away_player_id => league.players[1].id,
