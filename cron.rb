@@ -237,7 +237,8 @@ def decrease_life
       assert !game.played?
       cards = game.home_player.cards_dataset.filter('position < 5')
       cards.update('life = life - 1')
-      #p cards.filter('life <= 0').all
+      dead_cards = cards.filter('life <= 0')
+      dead_cards.delete
     end
   end
 end
@@ -268,7 +269,7 @@ end
 
 debug_create_players(2)
 
-5.times do
+9.times do
   create_leagues
       debug_entry_players # debug
   open_leagues
