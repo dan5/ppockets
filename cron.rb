@@ -18,7 +18,7 @@ DB = Sequel.sqlite
 class GameEnvironment < Sequel::Model
   set_schema {
     primary_key :id
-    Int :num_games, :default => 5
+    Int :num_games, :default => 3
     Int :stage, :default => 1
   }
   unless table_exists?
@@ -37,18 +37,23 @@ class User < Sequel::Model
   create_table unless table_exists?
 end 
     
+DB.create_table :leagues_players do
+  primary_key :id
+  foreign_key :league_id, :leagues
+  foreign_key :player_id, :players
+end 
+
 class Player < Sequel::Model
   many_to_one :user
   one_to_many :cards
   one_to_many :player
-  many_to_one :leagues
+  many_to_many :leagues
   set_schema {
     primary_key :id
     foreign_key :user_id, :users
-    foreign_key :league_id, :leagues
     Bool :npc?, :default => false
-    Bool :home?
-    Bool :entry?
+    Bool :home?, :default => false
+    Bool :entry?, :default => false
     Int :jewel, :default => 1000
     Int :num_commands, :default => 1
     Int :stage
@@ -66,7 +71,7 @@ class Player < Sequel::Model
   end
 
   def validate
-    raise if entry? && league_id
+    #raise if entry? && league_id
   end
 end 
 
@@ -128,8 +133,10 @@ end
 class League < Sequel::Model
   one_to_many :games
   one_to_many :rsults
+  many_to_many :players
   set_schema {
     primary_key :id
+    Bool :active?, :default => true
     Int :game_count, :default => 0
     Int :max_game_count
     Int :stage
@@ -138,16 +145,12 @@ class League < Sequel::Model
   }
   create_table unless table_exists?
 
-  def next_game
-    games = Game.filter(:league_id => self.id).order(:game_count) # todo
-    games.filter(:played? => false).limit(1).first
-  end
-
   def dump_string
     "id: #{id} " +
     games.map {|e| "(#{e.game_count} #{e.played? ? 'x' : '-'})" }.join(' ')
   end
 end
+ActiveLeague = League.filter(:active? => true) # todo
       
 class Game < Sequel::Model
   many_to_one :leagues
@@ -173,49 +176,60 @@ def create_leagues
   dump_method_name
   env = GameEnv.first
   max_game_count = env[:num_games]
-  players = Player.filter(:league_id => nil).all # todo: entry
+  players = Player.filter(:entry? => true).all # todo: entry
   while players.count >= 2 do
     league = League.create(:max_game_count => max_game_count)
     puts "League.create: id => #{league.id}"
-    players.shift.update(:stage => env[:stage], :league_id => league.id, :home? => true)
-    players.shift.update(:stage => env[:stage], :league_id => league.id, :home? => false)
+    [true, false].each do |is_home|
+      player = players.shift
+      player.update(:stage => env[:stage], :home? => is_home, :entry? => false)
+      league.add_player(player)
+      league.save
+    end
     max_game_count.times {|game_count| Game.create(:league_id => league.id, :game_count => game_count + 1) }
   end
-  players.count != 0 or raise
+  #players.count == 0 or raise
 end
 
-def delete_leagues
+def close_leagues
   dump_method_name
-  League.all.each do |league|
-    next if league.next_game
-    Player.filter(:league_id => league.id).update(:league_id => nil)
-    Game.filter(:league_id => league.id).delete # todo: 自動的に消えてほしい
-    league.delete
+  League.filter(:active? => true).all.each do |l|
+    games = Game.filter(:league_id => l.id, :played? => false)
+    next if games.count > 0
+    l.update(:active? => false)
+    puts "close: #{l.id}"
   end
 end
 
 def update_leagues
   dump_method_name
-  League.all.each do |league|
+  League.filter(:active? => true).all.each do |league|
     league.update(:game_count => league.game_count + 1) # todo
   end
 end
 
-def do_game(home_player, away_player)
-  home_player.result.win += 1
+def do_game(game)
+  #do_game(home_player, away_player)
+  #home_player.result.win += 1
+  game.update(:played? => true)
 end
 
 def do_games
   dump_method_name
-  League.filter('game_count > 0').each do |league|
-    game = league.next_game
-    game.update(:played? => true)
+  League.filter('game_count > 0').each do |l|
+    games = Game.filter(:league_id => l.id, :game_count => l.game_count)
+    games.each {|e| do_game(e) }
+
+    #games = Game.filter(:league_id => self.id).order(:game_count) # todo
+    #games.filter(:played? => false).limit(1).first
+
+    #game = league.next_game
   end
 end
 
 # -- debug ---------------------
 def debug_dump_leagues
-  puts League.all.map(&:dump_string)
+  puts ActiveLeague.map(&:dump_string)
 end
 
 def debug_create_players(n)
@@ -225,12 +239,22 @@ def debug_create_players(n)
   end
 end
 
-debug_create_players(7)
+def debug_entry_players
+  Player.all.each do |player|
+    unless player.leagues.find(&:active?)
+      player.update(:entry? => true)
+      p player.user.name
+    end
+  end
+end
 
-15.times do
+debug_create_players(3)
+
+7.times do
+  debug_entry_players
   create_leagues
   do_games
   debug_dump_leagues
-  delete_leagues
   update_leagues
+  close_leagues
 end
