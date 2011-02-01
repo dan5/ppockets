@@ -1,17 +1,7 @@
 # -*- encoding: utf-8 -*-
-class Object
-  def dump_method_name()
-    current_method = caller.first.scan(/`(.*)'/).flatten.first
-    puts "--- #{current_method} ---"
-  end
-end
-
-#class Array; def sample() self[rand(size)] end end
-
-require 'rubygems'
 require 'sequel'
+require './helper'
 Sequel::Model.plugin(:schema)
-Encoding.default_external = 'utf-8'
 
 DB = Sequel.sqlite
 
