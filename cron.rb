@@ -126,7 +126,6 @@ class Card < Sequel::Model
 end 
 
 class League < Sequel::Model
-  one_to_many :players
   one_to_many :games
   one_to_many :rsults
   set_schema {
@@ -155,11 +154,16 @@ class Game < Sequel::Model
   set_schema {
     primary_key :id
     foreign_key :league_id, :leagues
+    foreign_key :home_player_id, :players
+    foreign_key :away_player_id, :players
+    Int :home_score
+    Int :away_score
     Int :game_count
     Bool :played?, :default => false
-    Text :logs
     Timestamp :created_at
     unique [:league_id, :game_count]
+    unique [:league_id, :game_count, :home_player_id]
+    unique [:league_id, :game_count, :away_player_id]
   }
   create_table unless table_exists?
 end
