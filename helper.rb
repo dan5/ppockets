@@ -5,4 +5,8 @@ class Object
   end
 end
 
+def assert(boolean, message = nil)
+  raise message if boolean
+end
+
 #class Array; def sample() self[rand(size)] end end
