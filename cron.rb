@@ -176,9 +176,10 @@ def create_leagues
   dump_method_name
   env = GameEnv.first
   max_game_count = env[:num_games]
+  league = League.create(:max_game_count => max_game_count)
+=begin
   players = Player.filter(:entry? => true).all # todo: entry
   while players.count >= 2 do
-    league = League.create(:max_game_count => max_game_count)
     puts "League.create: id => #{league.id}"
     [true, false].each do |is_home|
       player = players.shift
@@ -188,6 +189,7 @@ def create_leagues
     end
     max_game_count.times {|game_count| Game.create(:league_id => league.id, :game_count => game_count + 1) }
   end
+=end
   #players.count == 0 or raise
 end
 
