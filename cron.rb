@@ -36,6 +36,7 @@ end
 class Player < Sequel::Model
   many_to_one :user
   one_to_many :cards
+  one_to_many :card_logs
   many_to_many :leagues
   one_to_many :home_games, :class => :Game, :key => :home_player_id
   one_to_many :away_games, :class => :Game, :key => :away_player_id
@@ -166,6 +167,11 @@ class Card < Sequel::Model
   }
   create_table unless table_exists?
 
+  def off() 5 + off_plus end
+  def def() 5 + def_plus end
+  def agi() 5 + agi_plus end
+  def job() :fig end
+
   def after_create
     super
     self.name = Values.keys.sample
@@ -182,7 +188,33 @@ class Card < Sequel::Model
   }
 end 
 
+class CardLog < Sequel::Model
+  many_to_one :player
+  set_schema {
+    primary_key :id
+    foreign_key :player_id, :players
+    String :name
+    Bool :home?
+    Int :position
+    Int :score
+    Int :off
+    Int :def
+    Int :agi
+    Int :life
+    String :job
+  }
+
+  create_table unless table_exists?
+end
+
 # ----------------------------
+
+class DefaultCard < Hash
+  def initialize(opts = {})
+    self.merge!(:name => 'ghost', :off => 0, :def => 0, :agi => 0, :life => 0, :job => :fig).merge!(opts)
+  end
+end
+
 def create_leagues
   dump_method_name
   league = League.create(:num_games => GameEnv.num_games)
@@ -216,8 +248,24 @@ def update_leagues
   OpenedLeague.update('turn_count = turn_count + 1')
 end
 
+
+def create_card_logs(player, is_home)
+  logs = []
+  cards = player.cards_dataset.limit(5).all
+  cards.fill(cards.size...5) {|i| DefaultCard.new(:position => i) }.each do |card|
+    params = [:name, :position, :off, :def, :agi ,:life, :job
+             ].inject({}) {|hash, e| hash[e] = card[e] || card.__send__(e); hash }
+    params[:home?] = is_home
+    params[:player_id] = player.id
+    logs << CardLog.create(params)
+  end
+  logs
+end
+
 def do_game(game)
   game.update(:played? => true)
+  create_card_logs(game.home_player, true)
+  create_card_logs(game.away_player, false)
   #game.home_player.result.win += 1
 end
 
@@ -267,9 +315,9 @@ def debug_entry_players
   end
 end
 
-debug_create_players(2)
+debug_create_players(1000)
 
-9.times do
+5.times do
   create_leagues
       debug_entry_players # debug
   open_leagues
