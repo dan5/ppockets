@@ -136,9 +136,10 @@ class League < Sequel::Model
   many_to_many :players
   set_schema {
     primary_key :id
-    Bool :active?, :default => true
+    Bool :active?, :default => false
     Int :game_count, :default => 0
     Int :max_game_count
+    Int :max_players, :default => 2
     Int :stage
     Int :grade
     #unique [:home_player_id, :away_player_id]
@@ -151,6 +152,7 @@ class League < Sequel::Model
   end
 end
 ActiveLeague = League.filter(:active? => true) # todo
+NoActiveLeague = League.filter(:active? => false) # todo
       
 class Game < Sequel::Model
   many_to_one :leagues
@@ -164,9 +166,9 @@ class Game < Sequel::Model
     Int :game_count
     Bool :played?, :default => false
     Timestamp :created_at
-    unique [:league_id, :game_count]
-    unique [:league_id, :game_count, :home_player_id]
-    unique [:league_id, :game_count, :away_player_id]
+    #unique [:league_id, :game_count]
+    #unique [:league_id, :game_count, :home_player_id]
+    #unique [:league_id, :game_count, :away_player_id]
   }
   create_table unless table_exists?
 end
@@ -175,8 +177,7 @@ end
 def create_leagues
   dump_method_name
   env = GameEnv.first
-  max_game_count = env[:num_games]
-  league = League.create(:max_game_count => max_game_count)
+  league = League.create(:max_game_count => env[:num_games])
 =begin
   players = Player.filter(:entry? => true).all # todo: entry
   while players.count >= 2 do
@@ -193,11 +194,28 @@ def create_leagues
   #players.count == 0 or raise
 end
 
+def open_leagues
+  NoActiveLeague.all.select{|l| l.players.count == l.max_players }.each do |league|
+      p(:league_id => league.id,
+                  :home_player_id => league.players[0].id,
+                  :away_player_id => league.players[1].id)
+    league.max_game_count.times do |game_count|
+      Game.create(:league_id => league.id,
+                  :game_count => game_count + 1,
+                  :home_player_id => league.players[0].id,
+                  :away_player_id => league.players[1].id,
+                 )
+    end
+    league.update(:active? => true)
+  end
+end
+
 def close_leagues
   dump_method_name
   League.filter(:active? => true).all.each do |l|
     games = Game.filter(:league_id => l.id, :played? => false)
     next if games.count > 0
+    l.players.each {|e| e.update(:entry? => true) }
     l.update(:active? => false)
     puts "close: #{l.id}"
   end
@@ -243,9 +261,12 @@ end
 
 def debug_entry_players
   Player.all.each do |player|
-    unless player.leagues.find(&:active?)
-      player.update(:entry? => true)
+    next if player.entry?
+    if league = NoActiveLeague.all.find {|l| l.players.count < l.max_players }
       p player.user.name
+      player.update(:entry? => true)
+      league.add_player(player)
+      league.save
     end
   end
 end
@@ -253,8 +274,9 @@ end
 debug_create_players(3)
 
 7.times do
-  debug_entry_players
   create_leagues
+  debug_entry_players
+  open_leagues
   do_games
   debug_dump_leagues
   update_leagues
