@@ -70,16 +70,28 @@ class Player < Sequel::Model
   end
 end 
 
+class TotalResult < Sequel::Model
+  many_to_one :player
+  set_schema {
+    primary_key :id
+    foreign_key :player_id, :players
+    Int :grade
+    Int :win, :default => 0
+    Int :lose, :default => 0
+    Int :draw, :default => 0
+  }
+  create_table unless table_exists?
+end
+
 class Result < Sequel::Model
   many_to_one :player
   set_schema {
     primary_key :id
     foreign_key :player_id, :players
-    Int :stage
-    Int :grade
-    Int :wins, :default => 0
-    Int :draws, :default => 0
-    Int :loses, :default => 0
+    foreign_key :league_id, :leagues
+    Int :win, :default => 0
+    Int :lose, :default => 0
+    Int :draw, :default => 0
   }
   create_table unless table_exists?
 end
@@ -114,13 +126,15 @@ class Card < Sequel::Model
 end 
 
 class League < Sequel::Model
-  one_to_many :games
   one_to_many :players
+  one_to_many :games
+  one_to_many :rsults
   set_schema {
     primary_key :id
-    Bool :ready?, :default => false
     Int :game_count, :default => 0
     Int :max_game_count
+    Int :stage
+    Int :grade
     #unique [:home_player_id, :away_player_id]
   }
   create_table unless table_exists?
@@ -155,7 +169,7 @@ def create_leagues
   dump_method_name
   env = GameEnv.first
   max_game_count = env[:num_games]
-  players = Player.filter(:league_id => nil).all
+  players = Player.filter(:league_id => nil).all # todo: entry
   while players.count >= 2 do
     league = League.create(:max_game_count => max_game_count)
     puts "League.create: id => #{league.id}"
@@ -163,7 +177,7 @@ def create_leagues
     players.shift.update(:stage => env[:stage], :league_id => league.id, :home? => false)
     max_game_count.times {|game_count| Game.create(:league_id => league.id, :game_count => game_count + 1) }
   end
-  p players.count
+  players.count != 0 or raise
 end
 
 def delete_leagues
@@ -181,6 +195,10 @@ def update_leagues
   League.all.each do |league|
     league.update(:game_count => league.game_count + 1) # todo
   end
+end
+
+def do_game(home_player, away_player)
+  home_player.result.win += 1
 end
 
 def do_games
