@@ -80,6 +80,7 @@ class League < Sequel::Model
     Int :max_turn_count
     Int :num_games
     Int :max_players, :default => 2
+    Int :num_players, :default => 0 # @todo: it should be removed
     Int :stage
     Int :grade
   }
@@ -371,20 +372,21 @@ end
 def debug_entry_players
   Player.all.each do |player|
     next if player.entry?
-    if league = WaitingLeague.find {|l| l.players.count < l.max_players }
+    if league = WaitingLeague.filter('num_players < max_players').first
       p player.user.name
       player.update(:entry? => true)
       league.add_player(player)
+      league.num_players += 1
       league.save
     end
   end
 end
 
 srand(0)
-debug_create_players(3)
+debug_create_players(200)
 
-5.times do
-  create_leagues(1)
+10.times do
+  create_leagues(100)
       debug_entry_players # debug
   open_leagues
   do_games
