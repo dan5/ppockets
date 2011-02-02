@@ -101,7 +101,7 @@ OpenedLeague = League.filter(:status => 1)
 ClosedLeague = League.filter(:status => 2)
       
 class Game < Sequel::Model
-  many_to_one :leagues
+  many_to_one :league
   many_to_one :home_player, :class => :Player
   many_to_one :away_player, :class => :Player
   one_to_many :card_logs
@@ -135,9 +135,9 @@ class Result < Sequel::Model
     primary_key :id
     foreign_key :player_id, :players
     foreign_key :league_id, :leagues
-    Int :win, :default => 0
-    Int :lose, :default => 0
-    Int :draw, :default => 0
+    Int :win_count, :default => 0
+    Int :lose_count, :default => 0
+    Int :draw_count, :default => 0
   }
   create_table unless table_exists?
 end
@@ -330,16 +330,36 @@ def do_game(game)
   game_logs = play_game(home_cards, away_cards)
   set_score(game, game_logs)
   puts "log: #{game.home_score}-#{game.away_score} #{game_logs.inspect}"
-
-  #game.home_player.result.win += 1
   game.update(:played? => true)
 end
 
 def do_games
   dump_method_name
-  League.filter('turn_count > 0').each do |l|
+  League.filter('turn_count > 0').each do |l| # @todo: join tables
     games = l.games_dataset.filter(:turn_count => l.turn_count)
     games.each {|e| do_game(e) }
+  end
+end
+
+def _update_results(game)
+  [
+    [game.home_player, game.home_score - game.away_score],
+    [game.away_player, game.away_score - game.home_score]
+  ].each do |player, d|
+    result = Result.find_or_create(:league_id => game.league.id, :player_id => player.id)
+    case
+    when d == 0 then result.draw_count += 1
+    when d > 0 then result.win_count += 1
+    when d < 0 then result.lose_count += 1
+    end
+    result.save
+  end
+end
+
+def update_results
+  League.filter('turn_count > 0').each do |l| # @todo: join tables
+    games = l.games_dataset.filter(:turn_count => l.turn_count)
+    games.each {|e| _update_results(e) }
   end
 end
 
@@ -383,13 +403,14 @@ def debug_entry_players
 end
 
 srand(0)
-debug_create_players(200)
+debug_create_players(3)
 
 10.times do
-  create_leagues(100)
+  create_leagues(1)
       debug_entry_players # debug
   open_leagues
   do_games
+  update_results
       debug_dump_leagues # debug
   update_leagues
   decrease_life
