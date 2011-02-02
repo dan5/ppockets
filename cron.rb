@@ -35,9 +35,9 @@ end
 
 class Player < Sequel::Model
   many_to_one :user
+  many_to_many :leagues
   one_to_many :cards
   one_to_many :card_logs
-  many_to_many :leagues
   one_to_many :home_games, :class => :Game, :key => :home_player_id
   one_to_many :away_games, :class => :Game, :key => :away_player_id
   set_schema {
@@ -103,6 +103,7 @@ class Game < Sequel::Model
   many_to_one :leagues
   many_to_one :home_player, :class => :Player
   many_to_one :away_player, :class => :Player
+  one_to_many :card_logs
   set_schema {
     primary_key :id
     foreign_key :league_id, :leagues
@@ -199,13 +200,15 @@ end
 
 class CardLog < Sequel::Model
   many_to_one :player
+  many_to_one :game
   set_schema {
     primary_key :id
     foreign_key :player_id, :players
+    foreign_key :game_id, :games
     String :name
     Bool :home?
     Int :position
-    Int :score
+    Int :score # 0:draw nil:miss else:success
     Int :off
     Int :def
     Int :agi
@@ -259,7 +262,7 @@ def update_leagues
   OpenedLeague.update('turn_count = turn_count + 1')
 end
 
-def create_card_logs(player, is_home)
+def create_card_logs(game, player, is_home)
   logs = []
   cards = player.cards_dataset.limit(5).all
   # @todo: いろいろ書き直したい
@@ -268,6 +271,7 @@ def create_card_logs(player, is_home)
              ].inject({}) {|hash, e| hash[e] = card[e] || card.__send__(e); hash }
     params[:home?] = is_home
     params[:player_id] = player.id
+    params[:game_id] = game.id
     logs << CardLog.create(params)
   end
   logs
@@ -279,15 +283,13 @@ def _play_game(mode, home_card, away_card)
     next_mode, log = :atack_home, [:win_home] if home_card.agi > away_card.agi
     next_mode, log = :atack_away, [:win_away] if home_card.agi < away_card.agi
   else
-    if (:atack_home == mode && home_card.off == away_card.def) ||
-       (:atack_away == mode && away_card.off == home_card.def)
-      next_mode, log = :comp_agi, [:draw]
+    off_card, def_card, next_mode = [home_card, away_card, :atack_away] if :atack_home == mode
+    off_card, def_card, next_mode = [away_card, home_card, :atack_home] if :atack_away == mode
+    if off_card.off == def_card.def
+      next_mode, log = :comp_agi, [0] # :draw
     else
-      off_card, def_card, next_mode = [home_card, away_card, :atack_away] if :atack_home == mode
-      off_card, def_card, next_mode = [away_card, home_card, :atack_home] if :atack_away == mode
-      success = off_card.off > def_card.def
-      home_card.update(:score => 2) if success
-      log = [success ? [:success, home_card.score] : :miss].flatten
+      score = off_card.off > def_card.def ? 2 : nil
+      log = [score]
     end
   end
   [next_mode, log]
@@ -304,12 +306,29 @@ def play_game(home_cards, away_cards)
   game_logs
 end
 
+def set_score(game, game_logs)
+  home_card_logs = game.card_logs_dataset.filter(:player_id => game.home_player.id)
+  away_card_logs = game.card_logs_dataset.filter(:player_id => game.away_player.id)
+  game_logs.each.with_index do |log, i|
+    mode, score = log
+    if score # @trap: (score == 0) => :draw
+      home_card_logs.filter(:position => i).update(:score => score) if mode == :atack_home
+      away_card_logs.filter(:position => i).update(:score => score) if mode == :atack_away
+    end
+  end
+  assert home_card_logs.count != 5
+  game.home_score = home_card_logs.sum(:score) || 0
+  assert away_card_logs.count != 5
+  game.away_score = away_card_logs.sum(:score) || 0
+end
+
 def do_game(game)
-  home_cards = create_card_logs(game.home_player, true)
-  away_cards = create_card_logs(game.away_player, false)
+  home_cards = create_card_logs(game, game.home_player, true)
+  away_cards = create_card_logs(game, game.away_player, false)
   puts "#{game.home_player.name} vs #{game.away_player.name}"
   game_logs = play_game(home_cards, away_cards)
-  puts "#{game.home_score}-#{game.away_score} #{game_logs.inspect}"
+  set_score(game, game_logs)
+  puts "log: #{game.home_score}-#{game.away_score} #{game_logs.inspect}"
 
   #game.home_player.result.win += 1
   game.update(:played? => true)
@@ -364,7 +383,7 @@ end
 srand(0)
 debug_create_players(3)
 
-30.times do
+5.times do
   create_leagues(1)
       debug_entry_players # debug
   open_leagues
