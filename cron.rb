@@ -274,41 +274,34 @@ def create_card_logs(player, is_home)
   logs
 end
 
+def _play_game(mode, home_card, away_card)
+  if :comp_agi == mode
+    next_mode, log = mode, [:draw] if home_card.agi == away_card.agi
+    next_mode, log = :atack_home, [:win_home] if home_card.agi > away_card.agi
+    next_mode, log = :atack_away, [:win_away] if home_card.agi < away_card.agi
+  else
+    if (:atack_home == mode && home_card.off == away_card.def) ||
+       (:atack_away == mode && away_card.off == home_card.def)
+      next_mode = :comp_agi
+      log = [:draw]
+    else
+      off_card, def_card, next_mode = [home_card, away_card, :atack_away] if :atack_home == mode
+      off_card, def_card, next_mode = [away_card, home_card, :atack_home] if :atack_away == mode
+      success = off_card.off > def_card.def
+      home_card.update(:score => 2) if success
+      log = [success ? [:success, home_card.score] : :miss].flatten
+    end
+  end
+  [next_mode, log]
+end
+
 def play_game(home_cards, away_cards)
   game_logs = []
-  mode = :agi
+  mode = :comp_agi
   home_cards.zip(away_cards).each do |home_card, away_card|
     last_mode = mode
-    game_logs <<
-      if :agi == mode
-        if home_card.agi == away_card.agi
-          [last_mode, :draw]
-        elsif home_card.agi > away_card.agi
-          mode = :shot_home
-          [last_mode, :win_home]
-        else
-          mode = :shot_away
-          [last_mode, :win_away]
-        end
-      else
-        if (:shot_home == mode && home_card.off == away_card.def) ||
-           (:shot_away == mode && away_card.off == home_card.def)
-          mode = :agi
-          [last_mode, :draw]
-        elsif :shot_home == mode
-          f = home_card.off > away_card.def
-          home_card.update(:score => 2) if f
-          mode = :shot_away
-          [last_mode, f ? [:success, home_card.score] : :miss].flatten
-        elsif :shot_away == mode
-          f = away_card.off > home_card.def
-          away_card.update(:score => 2) if f
-          mode = :shot_home
-          [last_mode, f ? [:success, away_card.score] : :miss].flatten
-        else
-          raise
-        end
-      end
+    mode, log = _play_game(mode, home_card, away_card)
+    game_logs << [last_mode] + log
   end
   #puts "#{game.home_score}-#{game.away_score} #{game_logs.inspect}"
   game_logs
