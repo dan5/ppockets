@@ -95,7 +95,7 @@ class League < Sequel::Model
     "id: #{id} " + games.map(&:dump_string).join(' ')
   end
 end
-WaitingLeague = League.filter(:status => 0) # todo
+WaitingLeague = League.filter(:status => 0) # @todo
 OpenedLeague = League.filter(:status => 1)
 ClosedLeague = League.filter(:status => 2)
       
@@ -160,31 +160,40 @@ class Card < Sequel::Model
     foreign_key :player_id, :players
     String :name
     Int :position
+    Int :agi_plus, :default => 0
     Int :off_plus, :default => 0
     Int :def_plus, :default => 0
-    Int :agi_plus, :default => 0
     Int :life
   }
   create_table unless table_exists?
 
-  def off() 5 + off_plus end
-  def def() 5 + def_plus end
-  def agi() 5 + agi_plus end
+  def agi() default_value(name)[0] + agi_plus end
+  def off() default_value(name)[1] + off_plus end
+  def def() default_value(name)[2] + def_plus end
   def job() :fig end
 
   def after_create
     super
     self.name = Values.keys.sample
-    self.life = 5
+    self.life = default_value(name)[3]
     self.save
   end
 
+  def default_value(name)
+     self.class.default_value(name)
+  end
+
+  def self.default_value(name)
+    Values[name]
+  end
+
   Values = {
-    'keroro' => [],
-    'tamama' => [],
-    'giroro' => [],
-    'dororo' => [],
-    'kururu' => [],
+    # name       ag of df li
+    'keroro' => [ 4, 4, 4, 5],
+    'tamama' => [ 2, 5, 2, 3],
+    'giroro' => [ 5, 6, 3, 4],
+    'dororo' => [ 6, 3, 5, 2],
+    'kururu' => [ 3, 2, 6, 4],
   }
 end 
 
@@ -215,10 +224,12 @@ class DefaultCard < Hash
   end
 end
 
-def create_leagues
+def create_leagues(n)
   dump_method_name
-  league = League.create(:num_games => GameEnv.num_games)
-  puts "    create_league id => #{league.id}"
+  n.times do
+    league = League.create(:num_games => GameEnv.num_games)
+    puts "    create_league id => #{league.id}"
+  end
 end
 
 def open_leagues
@@ -252,6 +263,7 @@ end
 def create_card_logs(player, is_home)
   logs = []
   cards = player.cards_dataset.limit(5).all
+  # @todo: いろいろ書き直したい
   cards.fill(cards.size...5) {|i| DefaultCard.new(:position => i) }.each do |card|
     params = [:name, :position, :off, :def, :agi ,:life, :job
              ].inject({}) {|hash, e| hash[e] = card[e] || card.__send__(e); hash }
@@ -262,11 +274,54 @@ def create_card_logs(player, is_home)
   logs
 end
 
+def play_game(home_cards, away_cards)
+  game_logs = []
+  mode = :agi
+  home_cards.zip(away_cards).each do |home_card, away_card|
+    last_mode = mode
+    game_logs <<
+      if :agi == mode
+        if home_card.agi == away_card.agi
+          [last_mode, :draw]
+        elsif home_card.agi > away_card.agi
+          mode = :shot_home
+          [last_mode, :win_home]
+        else
+          mode = :shot_away
+          [last_mode, :win_away]
+        end
+      else
+        if (:shot_home == mode && home_card.off == away_card.def) ||
+           (:shot_away == mode && away_card.off == home_card.def)
+          mode = :agi
+          [last_mode, :draw]
+        elsif :shot_home == mode
+          f = home_card.off > away_card.def
+          home_card.update(:score => 2) if f
+          mode = :shot_away
+          [last_mode, f ? [:success, home_card.score] : :miss].flatten
+        elsif :shot_away == mode
+          f = away_card.off > home_card.def
+          away_card.update(:score => 2) if f
+          mode = :shot_home
+          [last_mode, f ? [:success, away_card.score] : :miss].flatten
+        else
+          raise
+        end
+      end
+  end
+  #puts "#{game.home_score}-#{game.away_score} #{game_logs.inspect}"
+  game_logs
+end
+
 def do_game(game)
-  game.update(:played? => true)
-  create_card_logs(game.home_player, true)
-  create_card_logs(game.away_player, false)
+  home_cards = create_card_logs(game.home_player, true)
+  away_cards = create_card_logs(game.away_player, false)
+  puts "#{game.home_player.name} vs #{game.away_player.name}"
+  p play_game(home_cards, away_cards)
+
   #game.home_player.result.win += 1
+  game.update(:played? => true)
 end
 
 def do_games
@@ -315,10 +370,11 @@ def debug_entry_players
   end
 end
 
-debug_create_players(1000)
+srand(0)
+debug_create_players(3)
 
-5.times do
-  create_leagues
+30.times do
+  create_leagues(1)
       debug_entry_players # debug
   open_leagues
   do_games
