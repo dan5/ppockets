@@ -259,7 +259,6 @@ def update_leagues
   OpenedLeague.update('turn_count = turn_count + 1')
 end
 
-
 def create_card_logs(player, is_home)
   logs = []
   cards = player.cards_dataset.limit(5).all
@@ -282,8 +281,7 @@ def _play_game(mode, home_card, away_card)
   else
     if (:atack_home == mode && home_card.off == away_card.def) ||
        (:atack_away == mode && away_card.off == home_card.def)
-      next_mode = :comp_agi
-      log = [:draw]
+      next_mode, log = :comp_agi, [:draw]
     else
       off_card, def_card, next_mode = [home_card, away_card, :atack_away] if :atack_home == mode
       off_card, def_card, next_mode = [away_card, home_card, :atack_home] if :atack_away == mode
@@ -303,7 +301,6 @@ def play_game(home_cards, away_cards)
     mode, log = _play_game(mode, home_card, away_card)
     game_logs << [last_mode] + log
   end
-  #puts "#{game.home_score}-#{game.away_score} #{game_logs.inspect}"
   game_logs
 end
 
@@ -311,7 +308,8 @@ def do_game(game)
   home_cards = create_card_logs(game.home_player, true)
   away_cards = create_card_logs(game.away_player, false)
   puts "#{game.home_player.name} vs #{game.away_player.name}"
-  p play_game(home_cards, away_cards)
+  game_logs = play_game(home_cards, away_cards)
+  puts "#{game.home_score}-#{game.away_score} #{game_logs.inspect}"
 
   #game.home_player.result.win += 1
   game.update(:played? => true)
