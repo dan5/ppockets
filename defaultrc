@@ -1,1 +1,2 @@
-DB = Sequel.sqlite('development.db')
+root_path = File.dirname(File.expand_path(__FILE__)).untaint
+DB = Sequel.sqlite(root_path + '/development.db')
