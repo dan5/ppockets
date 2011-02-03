@@ -4,6 +4,7 @@ require 'sequel'
 if $0 == __FILE__
   require 'optparse'
   rcfile = nil
+  run_game_times = 1
   optparse = OptionParser.new {|opts|
     opts.banner = "Usage: ruby #{$0} [options]"
 
@@ -17,10 +18,13 @@ if $0 == __FILE__
       $PP_Debug = true
       puts 'Enter PPockets Debug mode'
     }
+    opts.on("-t", "--times [n]", "Run game core n times") {|t|
+      run_game_times = t.to_i
+    }
   }
   optparse.parse!(ARGV)
 
-  unless rcfile
+  unless rcfile and run_game_times > 0
     puts optparse
     exit
   end
@@ -431,12 +435,8 @@ def debug_entry_players
   end
 end
 
-if $PP_Debug 
-  srand(0)
-  debug_create_players(10) if Player.count == 0
-end
-
-3.times do
+# -- main ---------------------
+def run_core
   create_leagues(Player.count / 4)
   debug_entry_players if $PP_Debug
   open_leagues
@@ -447,5 +447,12 @@ end
   decrease_life
   close_leagues
 end
+
+if $PP_Debug 
+  srand(0)
+  debug_create_players(10) if Player.count == 0
+end
+
+run_game_times.times { run_core }
 
 end # --- cron part
