@@ -270,6 +270,7 @@ if $0 == __FILE__ # cron part
 
 def create_leagues(n)
   dump_method_name
+  return if WaitingLeague.count > 5
   n.times do
     league = League.create(:num_games => GameEnv.num_games)
     puts "    create_league id => #{league.id}"
@@ -458,7 +459,7 @@ end
 
 if $PP_Debug 
   srand(0)
-  debug_create_players(7)# if Player.count == 0
+  debug_create_players(7) if Player.count == 0
 end
 
 run_game_times.times { run_core }

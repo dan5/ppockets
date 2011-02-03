@@ -78,8 +78,12 @@ __END__
 
 
 @@ games_show
-%p.todo @todo: 試合結果の表示
-&= Game.find(:id => params[:id]).values
+- game = Game.find(:id => params[:id])
+- if game.played?
+  %p.todo @todo: 試合結果の表示
+- else
+  %p.todo @todo: まだ試合は行われていません
+&= game.values
 
 
 @@ index
