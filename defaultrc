@@ -1,2 +1,1 @@
-DB = Sequel.sqlite
-#DB = Sequel.sqlite('ppockets.db')
+DB = Sequel.sqlite('development.db')
