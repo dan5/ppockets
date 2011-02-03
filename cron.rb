@@ -1,9 +1,37 @@
 # -*- encoding: utf-8 -*-
 require 'sequel'
 require './helper'
-Sequel::Model.plugin(:schema)
 
-DB = Sequel.sqlite
+if $0 == __FILE__
+  require 'optparse'
+  rcfile = nil
+  optparse = OptionParser.new{|opts|
+    opts.banner = "Usage: ruby #{$0} [options]"
+
+    opts.separator ""
+    opts.separator "Require options:"
+    opts.on("-r", "--rc [RCFILE]", "Specify rcfile(required)") {|f|
+      rcfile = f
+    }
+
+    opts.separator ""
+    opts.separator "Optional:"
+    opts.on("-d", "--debug", "Debug PPockets"){
+      $PP_Debug = true
+      puts 'Enter PPockets Debug mode'
+    }
+  }
+  optparse.parse!(ARGV)
+
+  if rcfile
+    load rcfile
+  else
+    puts optparse
+    exit
+  end
+end
+
+Sequel::Model.plugin(:schema)
 
 class GameEnvironment < Sequel::Model
   set_schema {
@@ -27,11 +55,13 @@ class User < Sequel::Model
   create_table unless table_exists?
 end 
     
-DB.create_table :leagues_players do
-  primary_key :id
-  foreign_key :league_id, :leagues
-  foreign_key :player_id, :players
-end 
+unless DB.table_exists?(:leagues_players)
+  DB.create_table :leagues_players do
+    primary_key :id
+    foreign_key :league_id, :leagues
+    foreign_key :player_id, :players
+  end 
+end
 
 class Player < Sequel::Model
   many_to_one :user
@@ -219,13 +249,15 @@ class CardLog < Sequel::Model
   create_table unless table_exists?
 end
 
-# ----------------------------
-
 class DefaultCard < Hash
   def initialize(opts = {})
     self.merge!(:name => 'ghost', :off => 0, :def => 0, :agi => 0, :life => 0, :job => :fig).merge!(opts)
   end
 end
+
+# ----------------------------
+
+if $0 == __FILE__ # cron part
 
 def create_leagues(n)
   dump_method_name
@@ -384,7 +416,7 @@ end
 def debug_create_players(n)
   n.times do |i|
     user = User.create(:name => "testman%04d" % i)
-    player = Player.find_or_create(:user_id => user.id)
+    p player = Player.find_or_create(:user_id => user.id)
   end
 end
 
@@ -401,17 +433,21 @@ def debug_entry_players
   end
 end
 
-srand(0)
-debug_create_players(3)
+if $PP_Debug 
+  srand(0)
+  debug_create_players(10) if Player.count == 0
+end
 
-10.times do
+3.times do
   create_leagues(Player.count / 4)
-      debug_entry_players # debug
+  debug_entry_players if $PP_Debug
   open_leagues
   do_games
   update_results
-      debug_dump_leagues # debug
+  debug_dump_leagues if $PP_Debug
   update_leagues
   decrease_life
   close_leagues
 end
+
+end # --- cron part
