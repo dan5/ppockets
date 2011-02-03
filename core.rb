@@ -151,9 +151,16 @@ class Game < Sequel::Model
   }
   create_table unless table_exists?
 
-
   def validate
     assert home_player_id == away_player_id
+  end
+
+  def opponent(player)
+    case player.id
+    when home_player_id then Player.find(:id => away_player_id)
+    when away_player_id then Player.find(:id => home_player_id)
+    else raise
+    end
   end
 
   def dump_string
