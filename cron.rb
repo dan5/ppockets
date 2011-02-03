@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 require 'sequel'
-require './helper'
 
 if $0 == __FILE__
   require 'optparse'
@@ -25,9 +24,11 @@ if $0 == __FILE__
     puts optparse
     exit
   end
+  $LOAD_PATH.unshift('./')
   load rcfile
 end
 
+require 'helper'
 Sequel::Model.plugin(:schema)
 
 class GameEnvironment < Sequel::Model
