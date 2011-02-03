@@ -423,8 +423,9 @@ def debug_dump_leagues
 end
 
 def debug_create_players(n)
+  max_user_id = User.count + 1
   n.times do |i|
-    user = User.create(:name => "testman%04d" % i)
+    user = User.create(:name => "testman%04d" % (i + max_user_id))
     p player = Player.find_or_create(:user_id => user.id)
   end
 end
@@ -457,7 +458,7 @@ end
 
 if $PP_Debug 
   srand(0)
-  debug_create_players(7) if Player.count == 0
+  debug_create_players(7)# if Player.count == 0
 end
 
 run_game_times.times { run_core }

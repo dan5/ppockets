@@ -4,6 +4,8 @@ require 'haml'
 require 'sinatra'
 require 'sinatra_more/markup_plugin'
 Sinatra::Base.register SinatraMore::MarkupPlugin
+#require 'haml/template'
+#Haml::Template.options[:escape_html] = true
 
 helpers do
 end
@@ -30,24 +32,14 @@ end
 
 __END__
 
-@@ layout
-%html
-  %h1.title
-    ppockets
-  .menus
-    = link_to 'home', "/"
-    = link_to 'players', "/players"
-  = yield
-
-
 @@ players_show
-- player = Player.find(params[:id])
+- player = Player.find(:id => params[:id])
 - games = Game.filter('home_player_id = ? OR away_player_id = ?', player.id, player.id)
 - next_games = games.filter(:played? => false)
 - recent_games = games.filter(:played? => true).order(:id.desc).limit(5)
-%h2= h player.name
+%h2&= player.name
 %p.todo @todo: 成績表示
-= h player.values
+&= player.values
 %h2 今後の試合
 %ul
   - next_games.each do |game|
@@ -61,15 +53,15 @@ __END__
     %li
       - str = "vs #{game.opponent(player).name}"
       = link_to h(str), "/games/#{game.id}"
-      = h '... 0 - 0'
-      = h card_logs.map {|e| "[#{e.name}]" }.join
+      &= '... 0 - 0'
+      &= card_logs.map {|e| "[#{e.name}]" }.join
 %h2 cards
 %p.todo @todo: ログインしていないと見えない
 %ul
   - player.cards.each do |card|
     %li
       - str = "#{card.name} #{card.agi}/#{card.off}/#{card.def}/#{card.life}"
-      = h str
+      &= str
 
 
 @@ players
@@ -81,29 +73,39 @@ __END__
 
 
 @@ leagues_show
-= h League.find(params[:id]).values
+%p.todo @todo: [参加するボタン]
+&= League.find(:id => params[:id]).values
 
 
 @@ games_show
-= h Game.find(params[:id]).values
+%p.todo @todo: 試合結果の表示
+&= Game.find(:id => params[:id]).values
 
 
 @@ index
 %h2 エントリ受付中のリーグ
-%ul
+.waiting
   - WaitingLeague.each do |league|
-    %li
-      = h league.id
-      = "(#{league.players_count})"
+    - str = "league#{league.id}(#{league.players_count})"
+    = link_to h(str), "/leagues/#{league.id}"
 %h2 開催中のリーグ
-%ul
+.opened
   - OpenedLeague.each do |league|
-    %li
-      = link_to league.id, "/leagues/#{league.id}"
-      = h league.players_count
+    - str = "league#{league.id}(#{league.players_count})"
+    = link_to h(str), "/leagues/#{league.id}"
 %h2 過去のリーグ
-%ul
+.closed
   - ClosedLeague.each do |league|
-    %li
-      = h league.id
-      = h league.players_count
+    - str = "league#{league.id}"
+    = link_to h(str), "/leagues/#{league.id}"
+
+
+@@ layout
+%html
+  .menus
+    = link_to 'home', "/"
+    = link_to 'players', "/players"
+  = yield
+  .footer
+    %hr
+    ppockets
