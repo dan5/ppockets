@@ -5,30 +5,27 @@ require './helper'
 if $0 == __FILE__
   require 'optparse'
   rcfile = nil
-  optparse = OptionParser.new{|opts|
+  optparse = OptionParser.new {|opts|
     opts.banner = "Usage: ruby #{$0} [options]"
 
-    opts.separator ""
-    opts.separator "Require options:"
+    opts.separator "\nRequire options:"
     opts.on("-r", "--rc [RCFILE]", "Specify rcfile(required)") {|f|
       rcfile = f
     }
 
-    opts.separator ""
-    opts.separator "Optional:"
-    opts.on("-d", "--debug", "Debug PPockets"){
+    opts.separator "\nOptional:"
+    opts.on("-d", "--debug", "Debug PPockets") {
       $PP_Debug = true
       puts 'Enter PPockets Debug mode'
     }
   }
   optparse.parse!(ARGV)
 
-  if rcfile
-    load rcfile
-  else
+  unless rcfile
     puts optparse
     exit
   end
+  load rcfile
 end
 
 Sequel::Model.plugin(:schema)
