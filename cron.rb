@@ -216,7 +216,6 @@ class CardLog < Sequel::Model
     Int :life
     String :job
   }
-
   create_table unless table_exists?
 end
 
@@ -266,7 +265,7 @@ end
 def create_card_logs(game, player, is_home)
   logs = []
   cards = player.cards_dataset.limit(5).all
-  # @todo: いろいろ書き直したい
+  # @todo: rewrite...
   cards.fill(cards.size...5) {|i| DefaultCard.new(:position => i) }.each do |card|
     params = [:name, :position, :off, :def, :agi ,:life, :job
              ].inject({}) {|hash, e| hash[e] = card[e] || card.__send__(e); hash }
@@ -406,7 +405,7 @@ srand(0)
 debug_create_players(3)
 
 10.times do
-  create_leagues(1)
+  create_leagues(Player.count / 4)
       debug_entry_players # debug
   open_leagues
   do_games
