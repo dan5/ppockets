@@ -22,15 +22,50 @@ get '/leagues/:id' do
   haml :leagues_show
 end
 
+get '/leagues' do
+  haml :leagues
+end
+
 get '/games/:id' do
   haml :games_show
 end
 
+get '/command/off_up' do
+  # @todo: 回数制限
+  @player = Player.find(:id => 1) # todo
+  @player.off_up
+  'ok'
+  redirect '/'
+end
+
 get '/' do
-  haml :index
+  @player = Player.find(:id => 1) # todo
+  haml :home
 end
 
 __END__
+
+@@ home
+- games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
+- next_games = games.filter(:played? => false)
+%ul
+  - @player.cards.each do |card|
+    %li
+      - str = "#{card.name} #{card.agi}/#{card.off}/#{card.def}/#{card.life}"
+      &= str
+
+%h2 COMMANDS
+%ul
+  %li= link_to 'NEW CARD', "/command/new_card"
+  %li= link_to 'OFF UP', "/command/off_up"
+  %li= link_to 'DEF UP', "/command/def_up"
+
+%h2 NEXT GAMES
+%ul
+  - next_games.each do |game|
+    %li
+      - str = "vs #{game.opponent(@player).name}"
+      = link_to h(str), "/games/#{game.id}"
 
 @@ players_show
 - player = Player.find(:id => params[:id])
@@ -89,20 +124,13 @@ __END__
 
 
 @@ leagues_show
-%p.todo @todo: [参加するボタン]
-&= League.find(:id => params[:id]).values
+- league = League.find(:id => params[:id])
+- if league.status == 0
+  %p.todo @todo: [参加するボタン]
+&= league.values
 
 
-@@ games_show
-- game = Game.find(:id => params[:id])
-- if game.played?
-  %p.todo @todo: 試合結果の表示
-- else
-  %p.todo @todo: まだ試合は行われていません
-&= game.values
-
-
-@@ index
+@@ leagues
 %h2 エントリ受付中のリーグ
 .waiting
   - WaitingLeague.each do |league|
@@ -120,6 +148,15 @@ __END__
     = link_to h(str), "/leagues/#{league.id}"
 
 
+@@ games_show
+- game = Game.find(:id => params[:id])
+- if game.played?
+  %p.todo @todo: 試合結果の表示
+- else
+  %p.todo @todo: まだ試合は行われていません
+&= game.values
+
+
 @@ layout
 %html
   %head
@@ -127,8 +164,9 @@ __END__
       = '.todo {color: gray}'
       = '.r {text-align: right}'
   .menus
-    = link_to 'home', "/"
-    = link_to 'players', "/players"
+    = link_to 'HOME', "/"
+    = link_to 'LEAGUES', "/leagues"
+    = link_to 'PLAYERS', "/players"
   = yield
   .footer
     %hr

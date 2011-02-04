@@ -32,6 +32,18 @@ if $0 == __FILE__
   load rcfile
 end
 
+module PlayerCommand
+  def off_up
+    return if num_commands <= 0
+    self.num_commands -= 1
+    DB.transaction {
+      save
+      cards_dataset.update('off_plus = off_plus + 1')
+    }
+  end
+end
+
+
 require 'helper'
 Sequel::Model.plugin(:schema)
 
@@ -66,6 +78,7 @@ unless DB.table_exists?(:leagues_players)
 end
 
 class Player < Sequel::Model
+  include PlayerCommand
   many_to_one :user
   many_to_many :leagues
   one_to_many :cards
@@ -460,15 +473,17 @@ end
 
 # -- main ---------------------
 def run_core
-  create_leagues(Player.count / 4)
-  debug_entry_players if $PP_Debug
-  open_leagues
-  do_games
-  update_results
-  debug_dump_leagues if $PP_Debug
-  update_leagues
-  decrease_life
-  close_leagues
+  DB.transaction {
+    create_leagues(Player.count / 4)
+    debug_entry_players if $PP_Debug
+    open_leagues
+    do_games
+    update_results
+    debug_dump_leagues if $PP_Debug
+    update_leagues
+    decrease_life
+    close_leagues
+  }
 end
 
 if $PP_Debug 
