@@ -72,6 +72,7 @@ class Player < Sequel::Model
   one_to_many :card_logs
   one_to_many :home_games, :class => :Game, :key => :home_player_id
   one_to_many :away_games, :class => :Game, :key => :away_player_id
+  one_to_many :results
   set_schema {
     primary_key :id
     foreign_key :user_id, :users
@@ -82,7 +83,7 @@ class Player < Sequel::Model
     Int :num_commands, :default => 1
     Int :stage
     Int :grade, :default => 0
-    Int :points, :default => 0
+    Int :point, :default => 0
     Timestamp :loged_at
   }
   create_table unless table_exists?
@@ -177,6 +178,9 @@ class Result < Sequel::Model
     Int :win_count, :default => 0
     Int :lose_count, :default => 0
     Int :draw_count, :default => 0
+    Int :point, :default => 0
+    Int :score, :default  => 0
+    Int :winning_margin, :default  => 0
   }
   create_table unless table_exists?
 end
@@ -388,12 +392,22 @@ def _update_results(game)
     [game.away_player, game.away_score - game.home_score]
   ].each do |player, d|
     result = Result.find_or_create(:league_id => game.league.id, :player_id => player.id)
+    pt = 0
     case
-    when d == 0 then result.draw_count += 1
-    when d > 0 then result.win_count += 1
-    when d < 0 then result.lose_count += 1
+    when d == 0 
+      pt = 1
+      result.draw_count += 1
+    when d > 0 
+      pt = 3
+      result.win_count += 1
+    when d < 0 
+      result.lose_count += 1
     end
+    result.score += 1
+    result.winning_margin += d
     result.save
+    player.point += pt * 10000  + d * 100
+    player.save
   end
 end
 

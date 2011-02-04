@@ -66,10 +66,26 @@ __END__
 
 @@ players
 %h2 players
-%ul
-  - Player.each do |player|
-    %li
-      = link_to player.name, "/players/#{player.id}"
+%table
+  %tr
+    %td name
+    %td grade
+    %td win
+    %td draw
+    %td lose
+    %td margin
+    %td score
+    %td point
+  - Player.order(:point.desc).each do |player|
+    %tr
+      %td= link_to h(player.name), "/players/#{player.id}"
+      %td.r&= player.grade
+      %td.r&= player.results_dataset.sum(:win_count)
+      %td.r&= player.results_dataset.sum(:draw_count)
+      %td.r&= player.results_dataset.sum(:lose_count)
+      %td.r&= player.results_dataset.sum(:winning_margin)
+      %td.r&= player.results_dataset.sum(:score)
+      %td.r&= player.point / 10000.0
 
 
 @@ leagues_show
@@ -106,6 +122,10 @@ __END__
 
 @@ layout
 %html
+  %head
+    %style
+      = '.todo {color: gray}'
+      = '.r {text-align: right}'
   .menus
     = link_to 'home', "/"
     = link_to 'players', "/players"
