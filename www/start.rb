@@ -33,16 +33,14 @@ get '/games/:id' do
 end
 
 get '/command/off_up' do
-  # @todo: 回数制限
-  @player = Player.find(:id => 1) # todo
+  @player = Player.find(:id => 1) # @todo
   @player.off_up
-  'ok'
   redirect '/'
 end
 
 get '/' do
   session[:sid] = 'hello'
-  @player = Player.find(:id => 1) # todo
+  @player = Player.find(:id => 1) # @todo
   haml :home
 end
 

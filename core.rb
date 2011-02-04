@@ -63,19 +63,36 @@ GameEnv = GameEnvironment.find(:id => 1)
     
 class User < Sequel::Model
   one_to_one :player
+  one_to_one :twitter_account
   set_schema {
     primary_key :id
     String :name, :unique => true
+    String :login_password, :unique => true
   }
   create_table unless table_exists?
+
+  def self.create_from_twitter(twitter_id, name)
+    raise if TwitterAccount.find(:id_of_twitter => twitter_id)
+    account = TwitterAccount.create(:id_of_twitter => twitter_id)
+    unless account.user_id
+      user = User.create(:name => name, :login_password => name)
+      account.user = user
+      account.save
+    end
+    account.user
+  end
 end 
     
-unless DB.table_exists?(:leagues_players)
-  DB.create_table :leagues_players do
+class TwitterAccount < Sequel::Model
+  many_to_one :user
+  set_schema {
     primary_key :id
-    foreign_key :league_id, :leagues
-    foreign_key :player_id, :players
-  end 
+    foreign_key :user_id, :users
+    Int :id_of_twitter
+    String :screen_name
+    String :profile_image_url
+  }
+  create_table unless table_exists?
 end
 
 class Player < Sequel::Model
@@ -143,9 +160,18 @@ class League < Sequel::Model
     "id: #{id} " + games.map(&:dump_string).join(' ')
   end
 end
+
 WaitingLeague = League.filter(:status => 0) # @todo
 OpenedLeague = League.filter(:status => 1)
 ClosedLeague = League.filter(:status => 2)
+
+unless DB.table_exists?(:leagues_players)
+  DB.create_table :leagues_players do
+    primary_key :id
+    foreign_key :league_id, :leagues
+    foreign_key :player_id, :players
+  end 
+end
       
 class Game < Sequel::Model
   many_to_one :league
@@ -454,7 +480,9 @@ end
 def debug_create_players(n)
   max_user_id = User.count + 1
   n.times do |i|
-    user = User.create(:name => "testman%04d" % (i + max_user_id))
+    name = "testman%04d" % (i + max_user_id)
+    user = User.create_from_twitter(i, name)
+    #user = User.create(:name => "testman%04d" % (i + max_user_id))
     p player = Player.find_or_create(:user_id => user.id)
   end
 end
