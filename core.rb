@@ -32,6 +32,7 @@ if $0 == __FILE__
   load rcfile
 end
 
+# -- commands ---------------------
 module PlayerCommand
   def off_up
     return if num_commands <= 0
@@ -43,7 +44,7 @@ module PlayerCommand
   end
 end
 
-
+# -- DB ---------------------
 require 'helper'
 Sequel::Model.plugin(:schema)
 

@@ -7,6 +7,8 @@ Sinatra::Base.register SinatraMore::MarkupPlugin
 #require 'haml/template'
 #Haml::Template.options[:escape_html] = true
 
+enable :sessions
+
 helpers do
 end
 
@@ -39,6 +41,7 @@ get '/command/off_up' do
 end
 
 get '/' do
+  session[:sid] = 'hello'
   @player = Player.find(:id => 1) # todo
   haml :home
 end
