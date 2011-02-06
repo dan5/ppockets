@@ -43,9 +43,13 @@ get '/cmd/off_up' do
   redirect '/'
 end
 
+get '/cmd/def_up' do
+  player().def_up
+  redirect '/'
+end
+
 get '/cmd/swap/:a/:b' do
   player().swap_cards params[:a].to_i, params[:b].to_i
-  #player.cards_dataset.map(:position).inspect
   redirect '/'
 end
 
@@ -67,20 +71,20 @@ __END__
 %table
   %tr
     %th name
+    %th agi
     %th{:colspan=>2} off
     %th{:colspan=>2} def
-    %th agi
     %th life
     %th{:colspan=>4} swap
   - @player.cards_.each do |card|
     - i = card.position
     %tr
       %td&= card.name
+      %td.r.agi&= card.agi
       %td.r&= card.off
       %td.plus&= plus_param(card, :off_plus)
       %td.r&= card.def
       %td.plus&= plus_param(card, :def_plus)
-      %td.r&= card.agi
       %td.r&= card.life
       %td
         - unless card.position == @player.cards_.count - 1
@@ -198,11 +202,16 @@ __END__
     %style
       = '.todo {color: gray}'
       = '.r {text-align: right}'
+      = '.agi {font-weight: bold; padding: 0 10}'
       = '.plus {color: #666; font-size: 80%; vertical-align: bottom}'
-  .menus
-    = link_to 'HOME', "/"
-    = link_to 'LEAGUES', "/leagues"
-    = link_to 'PLAYERS', "/players"
+  %table{:width=>'100%'}
+    %tr
+      %td
+        = link_to 'HOME', "/"
+        = link_to 'LEAGUES', "/leagues"
+        = link_to 'PLAYERS', "/players"
+      %td
+        = link_to 'Login', "/"
   = yield
   .footer
     %hr

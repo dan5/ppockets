@@ -43,6 +43,16 @@ module PlayerCommand
     }
   end
 
+  def def_up
+    #return if num_commands <= 0
+    #self.num_commands -= 1
+    ptn = {:position => -1}
+    5.times {|i| ptn |= {:position => i} if rand(2) == 0 }
+    DB.transaction {
+      cards_dataset.filter(ptn).update('def_plus = def_plus + 1')
+    }
+  end
+
   def swap_cards(a, b)
     assert a < 0 || a >= 8
     assert b < 0 || b >= 8
