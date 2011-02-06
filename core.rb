@@ -100,6 +100,7 @@ class Player < Sequel::Model
   many_to_one :user
   many_to_many :leagues
   one_to_many :cards
+  one_to_many :new_cards
   one_to_many :card_logs
   one_to_many :home_games, :class => :Game, :key => :home_player_id
   one_to_many :away_games, :class => :Game, :key => :away_player_id
@@ -238,6 +239,16 @@ class TotalResult < Sequel::Model
   create_table unless table_exists?
 end
 
+class NewCard < Sequel::Model
+  many_to_one :player
+  set_schema {
+    primary_key :id
+    foreign_key :player_id, :players
+    String :name
+  }
+  create_table unless table_exists?
+end
+
 class Card < Sequel::Model
   many_to_one :player
   set_schema {
@@ -345,7 +356,9 @@ end
 
 def update_leagues
   dump_method_name
-  OpenedLeague.update('turn_count = turn_count + 1')
+  active_leagues_ = OpenedLeague
+  active_leagues_.update('turn_count = turn_count + 1')
+  deliver_card active_leagues_.all.map(&:players).flatten
 end
 
 def create_card_logs(game, player, is_home)
@@ -464,12 +477,22 @@ def decrease_life
     if game = l.games_dataset.filter(:turn_count => l.turn_count - 1).first
       puts "========================"
       assert !game.played?
-      cards = game.home_player.cards_dataset.filter('position < 5')
-      cards.update('life = life - 1')
-      dead_cards = cards.filter('life <= 0')
-      dead_cards.delete
+      [game.home_player, game.away_player].each do |player|
+        cards_ = player.cards_dataset.filter('position < 5')
+        cards_.filter('life <= 1').delete
+        cards_.update('life = life - 1')
+      end
     end
   end
+end
+
+def deliver_card(players)
+  dump_method_name
+  players.each do |player|
+    player.new_cards_dataset.delete
+    NewCard.create(:player_id => player.id)
+  end
+  #@rss_items << ["新しいカードが配られました（#{@game_env.day}日目）", "#{players.size}人のプレイヤーにカードが配られました。"]
 end
 
 # -- debug ---------------------
