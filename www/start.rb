@@ -32,16 +32,30 @@ get '/games/:id' do
   haml :games_show
 end
 
-get '/command/off_up' do
-  @player = Player.find(:id => 1) # @todo
-  @player.off_up
+get '/' do
+  @player = player()
+  session[:sid] = 'hello'
+  haml :home
+end
+
+get '/cmd/off_up' do
+  player().off_up
   redirect '/'
 end
 
-get '/' do
-  session[:sid] = 'hello'
-  @player = Player.find(:id => 1) # @todo
-  haml :home
+get '/cmd/swap/:a/:b' do
+  player().swap_cards params[:a].to_i, params[:b].to_i
+  #player.cards_dataset.map(:position).inspect
+  redirect '/'
+end
+
+def player
+  Player.find(:id => 1) # @todo
+end
+
+def plus_param(card, meth)
+  param = card.__send__(meth)
+  param == 0 ? '' : "+#{param}"
 end
 
 __END__
@@ -49,24 +63,44 @@ __END__
 @@ home
 - games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
 - next_games = games.filter(:played? => false)
+%h2 CARDS
+%table
+  %tr
+    %th name
+    %th{:colspan=>2} off
+    %th{:colspan=>2} def
+    %th agi
+    %th life
+    %th{:colspan=>4} swap
+  - @player.cards_.each do |card|
+    - i = card.position
+    %tr
+      %td&= card.name
+      %td.r&= card.off
+      %td.plus&= plus_param(card, :off_plus)
+      %td.r&= card.def
+      %td.plus&= plus_param(card, :def_plus)
+      %td.r&= card.agi
+      %td.r&= card.life
+      %td
+        - unless card.position == @player.cards_.count - 1
+          = link_to 'V', "/cmd/swap/#{i}/#{i + 1}"
+      %td
+        - unless card.position == 0
+          = link_to 'A', "/cmd/swap/#{i - 1}/#{i}"
+      %td.r&= card.position
+%h2 COMMANS
 %ul
-  - @player.cards.each do |card|
-    %li
-      - str = "#{card.name} #{card.agi}/#{card.off}/#{card.def}/#{card.life}"
-      &= str
-
-%h2 COMMANDS
-%ul
-  %li= link_to 'NEW CARD', "/command/new_card"
-  %li= link_to 'OFF UP', "/command/off_up"
-  %li= link_to 'DEF UP', "/command/def_up"
-
+  %li= link_to 'NEW CARD', "/cmd/new_card"
+  %li= link_to 'OFF UP', "/cmd/off_up"
+  %li= link_to 'DEF UP', "/cmd/def_up"
 %h2 NEXT GAMES
 %ul
   - next_games.each do |game|
     %li
       - str = "vs #{game.opponent(@player).name}"
       = link_to h(str), "/games/#{game.id}"
+
 
 @@ players_show
 - player = Player.find(:id => params[:id])
@@ -164,6 +198,7 @@ __END__
     %style
       = '.todo {color: gray}'
       = '.r {text-align: right}'
+      = '.plus {color: #666; font-size: 80%; vertical-align: bottom}'
   .menus
     = link_to 'HOME', "/"
     = link_to 'LEAGUES', "/leagues"

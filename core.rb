@@ -42,6 +42,18 @@ module PlayerCommand
       cards_dataset.update('off_plus = off_plus + 1')
     }
   end
+
+  def swap_cards(a, b)
+    assert a < 0 || a >= 8
+    assert b < 0 || b >= 8
+    card_a = cards_dataset.first(:position => a)
+    card_b = cards_dataset.first(:position => b)
+    return unless card_a && card_b
+    DB.transaction {
+      card_a.update(:position => b)
+      card_b.update(:position => a)
+    }
+  end
 end
 
 # -- DB ---------------------
@@ -99,9 +111,9 @@ class Player < Sequel::Model
   include PlayerCommand
   many_to_one :user
   many_to_many :leagues
-  one_to_many :cards
   one_to_many :new_cards
-  one_to_many :card_logs
+  one_to_many :cards, :order => :position
+  one_to_many :card_logs, :order => :position
   one_to_many :home_games, :class => :Game, :key => :home_player_id
   one_to_many :away_games, :class => :Game, :key => :away_player_id
   one_to_many :results
@@ -121,6 +133,10 @@ class Player < Sequel::Model
   create_table unless table_exists?
 
   def name() user.name end
+
+  def cards_
+    cards_dataset#.order(:position) # todo
+  end
 
   def after_create
     super
