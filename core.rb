@@ -356,7 +356,7 @@ end
 
 def update_leagues
   dump_method_name
-  active_leagues_ = OpenedLeague
+  active_leagues_ = OpenedLeague # @todo: 更新するリーグを選択する
   active_leagues_.update('turn_count = turn_count + 1')
   deliver_card active_leagues_.all.map(&:players).flatten
 end
