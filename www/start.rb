@@ -42,13 +42,22 @@ get '/' do
   haml :home
 end
 
+# -- cmd API -----------
+get '/cmd/new_card' do
+  _player().run_cmd :draw_new_card
+  session[:notice] = 'create a new card.'
+  redirect '/'
+end
+
 get '/cmd/off_up' do
-  _player().off_up
+  _player().run_cmd :off_up
+  session[:notice] = '攻撃強化コマンドを実行しました'
   redirect '/'
 end
 
 get '/cmd/def_up' do
-  _player().def_up
+  _player().run_cmd :def_up
+  session[:notice] = 'ディフェンス強化コマンドを実行しました'
   redirect '/'
 end
 
@@ -57,10 +66,6 @@ get '/cmd/swap/:a/:b' do
   session[:notice] = "swap cards(#{params[:a]}, #{params[:b]})"
   redirect '/'
 end
-
-#get '/dcmd/*' do
-#  'cannot use debug command'
-#end
 
 get '/dcmd/run_core' do
   if _player().game_master?
@@ -126,20 +131,25 @@ __END__
   .memo memo: コマンドは実行済みです
 %h2 STATUS
 %ul
-  %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
-  - league = @player.leagues_dataset.order(:id.desc).first
-  - str = "league#{league.id}"
   %li
-    = link_to h(str), "/leagues/#{league.id}"
-    に参加しています
-    %ul
-      - @player.next_games_.each do |game|
-        %li
-          - str = "vs #{game.opponent(@player).name}"
-          = link_to h(str), "/games/#{game.id}"
-          &= '... '
-          = link_to h("league#{game.league.id}"), "/leagues/#{league.id}"
-          &= "の#{game.turn_count}試合目"
+  &= @player.new_cards.count
+  枚のnew cardがあります
+  %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
+  %li
+    - if league = @player.leagues_dataset.filter('status < 2').order(:id.desc).first
+      - str = "league#{league.id}"
+      = link_to h(str), "/leagues/#{league.id}"
+      に参加しています
+      %ul
+        - @player.next_games_.each do |game|
+          %li
+            - str = "vs #{game.opponent(@player).name}"
+            = link_to h(str), "/games/#{game.id}"
+            &= '... '
+            = link_to h("league#{game.league.id}"), "/leagues/#{league.id}"
+            &= "の#{game.turn_count}試合目"
+    - else
+      リーグには参加していません
 
 
 @@ players_show

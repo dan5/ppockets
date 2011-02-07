@@ -32,26 +32,31 @@ if $0 == __FILE__
   load rcfile
 end
 
-# -- commands ---------------------
+# -- command ---------------------
 module PlayerCommand
-  def off_up
+  def run_cmd(command)
     return if num_commands <= 0
     self.num_commands -= 1
-    DB.transaction {
-      save
-      cards_dataset.update('off_plus = off_plus + 1')
-    }
+    DB.transaction { save; __send__ "cmd_#{command}" }
   end
 
-  def def_up
-    return if num_commands <= 0
-    self.num_commands -= 1
+  def cmd_draw_new_card
+    create_new_card
+  end
+
+  def cmd_off_up
+    # todo
+    cards_dataset.update('off_plus = off_plus + 1')
+  end
+
+  def cmd_def_up
     ptn = {:position => -1}
     Max_cards.times {|i| ptn |= {:position => i} if rand(2) == 0 }
-    DB.transaction {
-      save
-      cards_dataset.filter(ptn).update('def_plus = def_plus + 1')
-    }
+    cards_dataset.filter(ptn).update('def_plus = def_plus + 1')
+  end
+
+  def create_new_card
+    NewCard.create(:player_id => id)
   end
 
   def swap_cards(a, b)
@@ -519,7 +524,7 @@ def deliver_card(players)
   dump_method_name
   players.each do |player|
     player.new_cards_dataset.delete
-    NewCard.create(:player_id => player.id)
+    player.create_new_card
   end
   #@rss_items << ["新しいカードが配られました（#{@game_env.day}日目）", "#{players.size}人のプレイヤーにカードが配られました。"]
 end
