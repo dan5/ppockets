@@ -144,6 +144,9 @@ class Player < Sequel::Model
   create_table unless table_exists?
 
   def name() user.name end
+  def games_() Game.filter('home_player_id = ? OR away_player_id = ?', id, id) end
+  def next_games_() games_.filter(:played? => false) end
+  def recent_games_() games_.filter(:played? => true).order(:id.desc) end
 
   def cards_
     cards_dataset#.order(:position) # todo
@@ -175,6 +178,7 @@ class League < Sequel::Model
     Int :players_count, :default => 0 # @todo: it should be removed
     Int :stage
     Int :grade
+    Timestamp :created_at, :default => Time.now
   }
   create_table unless table_exists?
 
@@ -215,7 +219,7 @@ class Game < Sequel::Model
     Bool :played?, :default => false
     Int :home_score
     Int :away_score
-    Timestamp :created_at
+    Timestamp :created_at, :default => Time.now
     unique [:league_id, :turn_count]
   }
   create_table unless table_exists?
