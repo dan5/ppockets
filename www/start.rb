@@ -9,7 +9,16 @@ Sinatra::Base.register SinatraMore::MarkupPlugin
 
 enable :sessions
 
-helpers do
+before do
+  @player = Player.find(:id => 1) # @todo: from login session
+end
+
+get '/new_card' do
+  if @player.new_cards.count == 0
+    redirect '/'
+  else
+    haml :new_card
+  end
 end
 
 get '/players/:id' do
@@ -34,7 +43,6 @@ get '/games/:id' do
 end
 
 get '/' do
-  @player = _player()
   @debug_log = session[:debug_log]
   @notice = session[:notice]
   session[:debug_log] = nil
@@ -44,39 +52,41 @@ end
 
 # -- cmd API -----------
 get '/cmd/new_card' do
-  _player().run_cmd :draw_new_card
+  @player.run_cmd :draw_new_card
   session[:notice] = 'create a new card.'
   redirect '/'
 end
 
 get '/cmd/off_up' do
-  _player().run_cmd :off_up
+  @player.run_cmd :off_up
   session[:notice] = '攻撃強化コマンドを実行しました'
   redirect '/'
 end
 
 get '/cmd/def_up' do
-  _player().run_cmd :def_up
+  @player.run_cmd :def_up
   session[:notice] = 'ディフェンス強化コマンドを実行しました'
   redirect '/'
 end
 
+get '/cmd/put_new_card/:id' do
+  card = @player.run_cmd :put_new_card, params[:id]
+  session[:notice] = "#{card.name}をポケットに入れました"
+  redirect '/'
+end
+
 get '/cmd/swap/:a/:b' do
-  _player().swap_cards params[:a].to_i, params[:b].to_i
+  @player.swap_cards params[:a].to_i, params[:b].to_i
   session[:notice] = "swap cards(#{params[:a]}, #{params[:b]})"
   redirect '/'
 end
 
 get '/dcmd/run_core' do
-  if _player().game_master?
+  if @player.game_master?
     run_core 
     session[:debug_log] = 'run core'
   end
   redirect '/'
-end
-
-def _player
-  Player.find(:id => 1) # @todo
 end
 
 def plus_param(card, meth)
@@ -132,8 +142,10 @@ __END__
 %h2 STATUS
 %ul
   %li
-  &= @player.new_cards.count
-  枚のnew cardがあります
+    &= @player.new_cards.count
+    枚の
+    = link_to 'new card', '/new_card'
+    があります
   %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
   %li
     - if league = @player.leagues_dataset.filter('status < 2').order(:id.desc).first
@@ -150,6 +162,19 @@ __END__
             &= "の#{game.turn_count}試合目"
     - else
       リーグには参加していません
+
+
+@@ new_card
+%h2 NEW CARD
+- new_card = @player.new_cards_dataset.first
+.new_card
+  &= new_card.name
+%img{:src=>"http://d.hatena.ne.jp/images/diary/k/ken106/2008-06-16.jpg"}
+<!-- %img{:src=>"http://image.blog.livedoor.jp/aoicafe/imgs/4/a/4a87eb92.jpg"} -->
+.commands
+  %ul
+    %li= link_to h('ポケットに入れる'), "./cmd/put_new_card/#{new_card.id}"
+    %li= link_to h('売る'), './'
 
 
 @@ players_show

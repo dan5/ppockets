@@ -34,29 +34,38 @@ end
 
 # -- command ---------------------
 module PlayerCommand
-  def run_cmd(command)
-    return if num_commands <= 0
-    self.num_commands -= 1
-    DB.transaction { save; __send__ "cmd_#{command}" }
+  def run_cmd(*args)
+    command, *opts = args
+    DB.transaction { r = __send__("cmd_#{command}", *opts) }
   end
 
   def cmd_draw_new_card
+    return if num_commands <= 0
+    self.num_commands -= 1; save
     create_new_card
   end
 
   def cmd_off_up
+    return if num_commands <= 0
+    self.num_commands -= 1; save
     # todo
     cards_dataset.update('off_plus = off_plus + 1')
   end
 
   def cmd_def_up
+    return if num_commands <= 0
+    self.num_commands -= 1; save
     ptn = {:position => -1}
     Max_cards.times {|i| ptn |= {:position => i} if rand(2) == 0 }
     cards_dataset.filter(ptn).update('def_plus = def_plus + 1')
   end
 
-  def create_new_card
-    NewCard.create(:player_id => id)
+  def cmd_put_new_card(new_card_id)
+    ralse unless new_card_ = new_cards_dataset.first(:id => new_card_id)
+    if cards_.count < Max_cards
+      Card.create(:player_id => self.id, :name => new_card_.name, :position => cards_.count)
+      new_card_.delete
+    end
   end
 
   def swap_cards(a, b)
@@ -68,7 +77,18 @@ module PlayerCommand
     DB.transaction {
       card_a.update(:position => b)
       card_b.update(:position => a)
+      order_card
     }
+  end
+
+  def order_card
+    # @todo: updateを最小限に
+    cards.each.with_index {|card, i| card.update(:position => i) }
+  end
+
+  def create_new_card
+    name = Card.sample_name
+    NewCard.create(:player_id => id, :name => name)
   end
 end
 
@@ -155,7 +175,7 @@ class Player < Sequel::Model
   def recent_games_() games_.filter(:played? => true).order(:id.desc) end
 
   def cards_
-    cards_dataset#.order(:position) # todo
+    cards_dataset
   end
 
   def after_create
@@ -167,6 +187,10 @@ class Player < Sequel::Model
 
   def validate
     #raise if entry? && league_id
+    # @todo: only debug mode
+    return unless id
+    assert cards_.count > Max_cards
+    cards.each.with_index {|card, i| assert card.position != i }
   end
 end 
 
@@ -307,7 +331,7 @@ class Card < Sequel::Model
 
   def after_create
     super
-    self.name = Values.keys.sample
+    self.name ||= self.class.sample_name
     self.life = default_value(name)[3]
     self.save
   end
@@ -318,6 +342,10 @@ class Card < Sequel::Model
 
   def self.default_value(name)
     Values[name]
+  end
+
+  def self.sample_name
+    Values.keys.sample
   end
 
   Values = {
@@ -515,6 +543,7 @@ def decrease_life
         cards_ = player.cards_dataset.filter('position < 5')
         cards_.filter('life <= 1').delete
         cards_.update('life = life - 1')
+        player.order_card
       end
     end
   end
@@ -565,6 +594,14 @@ def debug_entry_players
   end
 end
 
+def debug_puts_new_card
+  Player.all.each do |player|
+    if new_card = player.new_cards_dataset.first
+      player.cmd_put_new_card new_card.id
+    end
+  end
+end
+
 def run_core
   DB.transaction {
     create_leagues(Player.count / 4)
@@ -576,6 +613,7 @@ def run_core
     update_leagues
     decrease_life
     close_leagues
+    debug_puts_new_card if $PP_Debug
   }
 end
 
