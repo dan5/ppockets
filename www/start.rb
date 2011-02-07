@@ -53,8 +53,8 @@ end
 # -- cmd API -----------
 get '/cmd/new_card' do
   @player.run_cmd :draw_new_card
-  session[:notice] = 'create a new card.'
-  redirect '/'
+  session[:notice] = 'created a new card.'
+  redirect '/new_card'
 end
 
 get '/cmd/off_up' do
@@ -98,6 +98,11 @@ __END__
 
 @@ home
 - games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
+.message
+  %ul
+    - if @player.new_cards.count > 0
+      %li
+        = link_to h("#{@player.new_cards.count}枚の new card があります"), '/new_card'
 %h2 CARDS
 %table
   %tr
@@ -141,11 +146,6 @@ __END__
   .memo memo: コマンドは実行済みです
 %h2 STATUS
 %ul
-  %li
-    &= @player.new_cards.count
-    枚の
-    = link_to 'new card', '/new_card'
-    があります
   %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
   %li
     - if league = @player.leagues_dataset.filter('status < 2').order(:id.desc).first
@@ -269,11 +269,13 @@ __END__
     %style
       = '.debug_log {color: #F84}'
       = '.notice {color: #0A0}'
+      = '.message a {color: red; font-weight: bold; text-decoration: underline;}'
       = '.memo {color: gray}'
       = '.todo {color: gray}'
       = '.r {text-align: right}'
       = '.agi {font-weight: bold; padding: 0 10}'
       = '.plus {color: #666; font-size: 80%; vertical-align: bottom}'
+      = 'a {text-decoration: none;}'
   %table{:width=>'100%'}
     %tr
       %td

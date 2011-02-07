@@ -37,6 +37,8 @@ module PlayerCommand
   def run_cmd(*args)
     command, *opts = args
     DB.transaction { r = __send__("cmd_#{command}", *opts) }
+  rescue
+    "run cmd error"
   end
 
   def cmd_draw_new_card
@@ -62,6 +64,7 @@ module PlayerCommand
 
   def cmd_put_new_card(new_card_id)
     ralse unless new_card_ = new_cards_dataset.first(:id => new_card_id)
+    # @todo: カードがmaxのときはそれを通知する必要がある
     if cards_.count < Max_cards
       Card.create(:player_id => self.id, :name => new_card_.name, :position => cards_.count)
       new_card_.delete
