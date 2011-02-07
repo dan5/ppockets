@@ -53,6 +53,15 @@ get '/cmd/swap/:a/:b' do
   redirect '/'
 end
 
+#get '/dcmd/*' do
+#  'cannot use debug command'
+#end
+
+get '/dcmd/run_core' do
+  run_core if player().game_master?
+  redirect '/'
+end
+
 def player
   Player.find(:id => 1) # @todo
 end
@@ -215,4 +224,5 @@ __END__
   = yield
   .footer
     %hr
+    = link_to 'Run core', "/dcmd/run_core"
     ppockets

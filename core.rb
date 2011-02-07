@@ -130,6 +130,7 @@ class Player < Sequel::Model
   set_schema {
     primary_key :id
     foreign_key :user_id, :users
+    Bool :game_master?, :default => false
     Bool :npc?, :default => false
     Bool :home?, :default => false
     Bool :entry?, :default => false
@@ -347,8 +348,6 @@ end
 
 # ----------------------------
 
-if $0 == __FILE__ # cron part
-
 def create_leagues(n)
   dump_method_name
   return if WaitingLeague.count > 5
@@ -532,7 +531,7 @@ def debug_create_players(n)
     name = "testman%04d" % (i + max_user_id)
     user = User.create_from_twitter(i, name)
     #user = User.create(:name => "testman%04d" % (i + max_user_id))
-    p player = Player.find_or_create(:user_id => user.id)
+    p player = Player.find_or_create(:user_id => user.id, :game_master? => true)
   end
 end
 
@@ -549,7 +548,6 @@ def debug_entry_players
   end
 end
 
-# -- main ---------------------
 def run_core
   DB.transaction {
     create_leagues(Player.count / 4)
@@ -564,11 +562,13 @@ def run_core
   }
 end
 
-if $PP_Debug 
-  srand(0)
-  debug_create_players(7) if Player.count == 0
-end
+if $0 == __FILE__ # cron part
 
-run_game_times.times { run_core }
+  if $PP_Debug 
+    srand(0)
+    debug_create_players(7) if Player.count == 0
+  end
+
+  run_game_times.times { run_core }
 
 end # --- cron part
