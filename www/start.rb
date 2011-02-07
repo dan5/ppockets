@@ -34,7 +34,10 @@ end
 
 get '/' do
   @player = player()
-  session[:sid] = 'hello'
+  @debug_log = session[:debug_log]
+  @notice = session[:notice]
+  session[:debug_log] = nil
+  session[:notice] = nil
   haml :home
 end
 
@@ -50,6 +53,7 @@ end
 
 get '/cmd/swap/:a/:b' do
   player().swap_cards params[:a].to_i, params[:b].to_i
+  session[:notice] = "swap cards(#{params[:a]}, #{params[:b]})"
   redirect '/'
 end
 
@@ -58,7 +62,10 @@ end
 #end
 
 get '/dcmd/run_core' do
-  run_core if player().game_master?
+  if player().game_master?
+    run_core 
+    session[:debug_log] = 'run core'
+  end
   redirect '/'
 end
 
@@ -209,6 +216,8 @@ __END__
 %html
   %head
     %style
+      = '.debug_log {color: #F84}'
+      = '.notice {color: #0A0}'
       = '.todo {color: gray}'
       = '.r {text-align: right}'
       = '.agi {font-weight: bold; padding: 0 10}'
@@ -221,6 +230,10 @@ __END__
         = link_to 'PLAYERS', "/players"
       %td
         = link_to 'Login', "/"
+  - if @debug_log
+    .debug_log&= @debug_log
+  - if @notice
+    .notice&= @notice
   = yield
   .footer
     %hr
