@@ -116,10 +116,10 @@ __END__
     - i = card.position
     %tr
       %td&= card.name
-      %td.r.agi&= card.agi
-      %td.r&= card.off
+      %td.r.agi&= card.agi_org
+      %td.r&= card.off_org
       %td.plus&= plus_param(card, :off_plus)
-      %td.r&= card.def
+      %td.r&= card.def_org
       %td.plus&= plus_param(card, :def_plus)
       %td.r&= card.life
       %td
@@ -173,7 +173,10 @@ __END__
 <!-- %img{:src=>"http://image.blog.livedoor.jp/aoicafe/imgs/4/a/4a87eb92.jpg"} -->
 .commands
   %ul
-    %li= link_to h('ポケットに入れる'), "./cmd/put_new_card/#{new_card.id}"
+    - if @player.cards_.count < Max_cards
+      %li= link_to h('ポケットに入れる'), "./cmd/put_new_card/#{new_card.id}"
+    - else
+      %li= h('ポケットに入れる')
     %li= link_to h('売る'), './'
 
 

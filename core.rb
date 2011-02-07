@@ -47,19 +47,20 @@ module PlayerCommand
     create_new_card
   end
 
-  def cmd_off_up
-    return if num_commands <= 0
-    self.num_commands -= 1; save
-    # todo
-    cards_dataset.update('off_plus = off_plus + 1')
-  end
-
-  def cmd_def_up
+  def param_up(rate, str)
     return if num_commands <= 0
     self.num_commands -= 1; save
     ptn = {:position => -1}
-    Max_cards.times {|i| ptn |= {:position => i} if rand(2) == 0 }
-    cards_dataset.filter(ptn).update('def_plus = def_plus + 1')
+    Max_cards.times {|i| ptn |= {:position => i} if rand(100) < rate }
+    cards_dataset.filter(ptn).update(str)
+  end
+
+  def cmd_off_up
+    param_up(50, 'off_plus = off_plus + 1')
+  end
+
+  def cmd_def_up
+    param_up(50, 'def_plus = def_plus + 1')
   end
 
   def cmd_put_new_card(new_card_id)
@@ -320,16 +321,19 @@ class Card < Sequel::Model
     foreign_key :player_id, :players
     String :name
     Int :position
-    Int :agi_plus, :default => 0
     Int :off_plus, :default => 0
     Int :def_plus, :default => 0
     Int :life
   }
   create_table unless table_exists?
 
-  def agi() default_value(name)[0] + agi_plus end
-  def off() default_value(name)[1] + off_plus end
-  def def() default_value(name)[2] + def_plus end
+  def agi_org() default_value(name)[0] end
+  def off_org() default_value(name)[1] end
+  def def_org() default_value(name)[2] end
+
+  def agi() agi_arg end
+  def off() off_arg + off_plus end
+  def def() def_arg + def_plus end
   def job() :fig end
 
   def after_create
