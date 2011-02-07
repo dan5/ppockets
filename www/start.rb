@@ -110,34 +110,36 @@ __END__
           = link_to 'A', "/cmd/swap/#{i - 1}/#{i}"
       %td.r&= card.position
 %h2 COMMANS
-.memo memo: リーグにエントリしたとき、または試合を行ったあと、次のコマンドを実行できます
-%ul
-  %li
-    = link_to 'NEW CARD', "/cmd/new_card"
-    &= '... 新しいカードを1枚引きます'
-  %li
-    = link_to 'OFF UP', "/cmd/off_up"
-    &= '... 攻撃強化を図ります。結果はランダムです'
-  %li
-    = link_to 'DEF UP', "/cmd/def_up"
-    &= '... 攻撃強化を図ります。結果はランダムです'
+- if @player.num_commands > 0
+  .memo memo: リーグにエントリしたとき、または試合を行ったあと、次のコマンドを実行できます
+  %ul
+    %li
+      = link_to 'NEW CARD', "/cmd/new_card"
+      %span.memo&= '... 新しいカードを1枚引きます'
+    %li
+      = link_to 'OFF UP', "/cmd/off_up"
+      %span.memo&= '... 攻撃強化を図ります。結果はランダムです'
+    %li
+      = link_to 'DEF UP', "/cmd/def_up"
+      %span.memo&= '... 攻撃強化を図ります。結果はランダムです'
+- else
+  .memo memo: コマンドは実行済みです
 %h2 STATUS
 %ul
+  %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
   - league = @player.leagues_dataset.order(:id.desc).first
   - str = "league#{league.id}"
   %li
     = link_to h(str), "/leagues/#{league.id}"
     に参加しています
-  %li= link_to h(@player.name), "/players/#{@player.id}"
-%h2 NEXT GAMES
-%ul
-  - @player.next_games_.each do |game|
-    %li
-      - str = "vs #{game.opponent(@player).name}"
-      = link_to h(str), "/games/#{game.id}"
-      &= '... '
-      = link_to h("league#{game.league.id}"), "/leagues/#{league.id}"
-      &= "の#{game.turn_count}試合目"
+    %ul
+      - @player.next_games_.each do |game|
+        %li
+          - str = "vs #{game.opponent(@player).name}"
+          = link_to h(str), "/games/#{game.id}"
+          &= '... '
+          = link_to h("league#{game.league.id}"), "/leagues/#{league.id}"
+          &= "の#{game.turn_count}試合目"
 
 
 @@ players_show
@@ -232,6 +234,7 @@ __END__
     %style
       = '.debug_log {color: #F84}'
       = '.notice {color: #0A0}'
+      = '.memo {color: gray}'
       = '.todo {color: gray}'
       = '.r {text-align: right}'
       = '.agi {font-weight: bold; padding: 0 10}'
@@ -251,5 +254,6 @@ __END__
   = yield
   .footer
     %hr
-    = link_to 'Run core', "/dcmd/run_core"
+    .debug_commands
+      = link_to 'Run core', "/dcmd/run_core"
     ppockets

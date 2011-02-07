@@ -44,18 +44,19 @@ module PlayerCommand
   end
 
   def def_up
-    #return if num_commands <= 0
-    #self.num_commands -= 1
+    return if num_commands <= 0
+    self.num_commands -= 1
     ptn = {:position => -1}
-    5.times {|i| ptn |= {:position => i} if rand(2) == 0 }
+    Max_cards.times {|i| ptn |= {:position => i} if rand(2) == 0 }
     DB.transaction {
+      save
       cards_dataset.filter(ptn).update('def_plus = def_plus + 1')
     }
   end
 
   def swap_cards(a, b)
-    assert a < 0 || a >= 8
-    assert b < 0 || b >= 8
+    assert a < 0 || a >= Max_cards
+    assert b < 0 || b >= Max_cards
     card_a = cards_dataset.first(:position => a)
     card_b = cards_dataset.first(:position => b)
     return unless card_a && card_b
@@ -350,8 +351,7 @@ class DefaultCard < Hash
   end
 end
 
-# ----------------------------
-
+# -- core ---------------------
 def create_leagues(n)
   dump_method_name
   return if WaitingLeague.count > 5
@@ -387,7 +387,7 @@ def update_leagues
   dump_method_name
   active_leagues_ = OpenedLeague # @todo: 更新するリーグを選択する
   active_leagues_.update('turn_count = turn_count + 1')
-  deliver_card active_leagues_.all.map(&:players).flatten
+  update_active_players active_leagues_.all.map(&:players).flatten
 end
 
 def create_card_logs(game, player, is_home)
@@ -522,6 +522,14 @@ def deliver_card(players)
     NewCard.create(:player_id => player.id)
   end
   #@rss_items << ["新しいカードが配られました（#{@game_env.day}日目）", "#{players.size}人のプレイヤーにカードが配られました。"]
+end
+
+def update_active_players(players)
+  dump_method_name
+  players.each do |player|
+    player.update(:num_commands => 1)
+  end
+  deliver_card players
 end
 
 # -- debug ---------------------
