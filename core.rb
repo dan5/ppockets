@@ -103,7 +103,7 @@ Sequel::Model.plugin(:schema)
 class GameEnvironment < Sequel::Model
   set_schema {
     primary_key :id
-    Int :num_games, :default => 3
+    Int :max_players, :default => 6
     Int :stage, :default => 1
   }
   unless table_exists?
@@ -207,8 +207,7 @@ class League < Sequel::Model
     Int :status, :default => 0 # 0:waiting 1:opened 2:closed
     Int :turn_count, :default => 0
     Int :max_turn_count
-    Int :num_games
-    Int :max_players, :default => 2
+    Int :max_players
     Int :players_count, :default => 0 # @todo: it should be removed
     Int :stage
     Int :grade
@@ -218,7 +217,7 @@ class League < Sequel::Model
 
   def after_create
     super
-    self.max_turn_count = num_games + 1
+    self.max_turn_count = max_players - 1 + 1
     self.save
   end
 
@@ -227,9 +226,9 @@ class League < Sequel::Model
   end
 end
 
-WaitingLeague = League.filter(:status => 0) # @todo
-OpenedLeague = League.filter(:status => 1)
-ClosedLeague = League.filter(:status => 2)
+WaitingLeague = League.filter(:status => 0).order(:id.desc) # @todo
+OpenedLeague = League.filter(:status => 1).order(:id.desc)
+ClosedLeague = League.filter(:status => 2).order(:id.desc)
 
 unless DB.table_exists?(:leagues_players)
   DB.create_table :leagues_players do
@@ -254,7 +253,8 @@ class Game < Sequel::Model
     Int :home_score
     Int :away_score
     Timestamp :created_at, :default => Time.now
-    unique [:league_id, :turn_count]
+    unique [:league_id, :turn_count, :home_player_id]
+    unique [:league_id, :turn_count, :away_player_id]
   }
   create_table unless table_exists?
 
@@ -392,22 +392,42 @@ class DefaultCard < Hash
 end
 
 # -- core ---------------------
+def game_combination(num_players)
+  result = []
+  tmp = (1...num_players).to_a # => [1, 2, 3, 4, 5, 6, 7]
+  (num_players - 1).times do |i|
+    # => [7, 1, 2, 3, 4, 5, 6]  if i == 1
+    # => [6, 7, 1, 2, 3, 4, 5]  if i == 2
+    tmp.unshift tmp.pop if i > 0
+    _tmp = tmp.dup
+    list = [[0, _tmp.pop]]
+    (num_players / 2 - 1).times do
+      list << [_tmp.shift, _tmp.pop]
+    end
+    result << list
+  end
+  result
+end
+
 def create_leagues(n)
   dump_method_name
   return if WaitingLeague.count > 5
   n.times do
-    league = League.create(:num_games => GameEnv.num_games)
+    league = League.create(:max_players => GameEnv.max_players)
     puts "    create_league id => #{league.id}"
   end
 end
 
 def open_leagues
   WaitingLeague.all.select{|l| l.players.count == l.max_players }.each do |league|
-    league.num_games.times do |turn_count|
-      Game.create(:league_id => league.id,
-                  :turn_count => turn_count + 1,
-                  :home_player_id => league.players[0].id,
-                  :away_player_id => league.players[1].id)
+    combi = game_combination(league.max_players)
+    combi.each.with_index do |cmb, turn_count|
+      cmb.each do |home_idx, away_idx|
+        Game.create(:league_id => league.id,
+                    :turn_count => turn_count + 1,
+                    :home_player_id => league.players[home_idx].id,
+                    :away_player_id => league.players[away_idx].id)
+      end
     end
     league.update(:status => 1)
     puts "    open_league id => #{league.id}"
@@ -477,6 +497,9 @@ end
 def set_score(game, game_logs)
   home_card_logs = game.card_logs_dataset.filter(:player_id => game.home_player.id)
   away_card_logs = game.card_logs_dataset.filter(:player_id => game.away_player.id)
+  away_card_logs = game.card_logs_dataset.filter(:player_id => game.away_player.id)
+  assert home_card_logs.count != 5
+  assert away_card_logs.count != 5
   game_logs.each.with_index do |log, i|
     mode, score = log
     if score # @trap: (score == 0) => :draw
@@ -484,15 +507,16 @@ def set_score(game, game_logs)
       away_card_logs.filter(:position => i).update(:score => score) if mode == :atack_away
     end
   end
-  assert home_card_logs.count != 5
   game.home_score = home_card_logs.sum(:score) || 0
-  assert away_card_logs.count != 5
   game.away_score = away_card_logs.sum(:score) || 0
 end
 
 def do_game(game)
+  assert game.card_logs_dataset.count != 0
   home_cards = create_card_logs(game, game.home_player, true)
   away_cards = create_card_logs(game, game.away_player, false)
+  assert home_cards.size != 5
+  assert away_cards.size != 5
   puts "#{game.home_player.name} vs #{game.away_player.name}"
   game_logs = play_game(home_cards, away_cards)
   set_score(game, game_logs)
@@ -504,6 +528,7 @@ def do_games
   dump_method_name
   League.filter('turn_count > 0').each do |l| # @todo: join tables
     games = l.games_dataset.filter(:turn_count => l.turn_count)
+    assert games.filter(:played? => true).count > 0
     games.each {|e| do_game(e) }
   end
 end

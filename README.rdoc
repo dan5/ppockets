@@ -28,4 +28,4 @@
 
 == memo
 
-git reset --soft HEAD^
+git reset --soft 'HEAD^'

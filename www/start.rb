@@ -244,6 +244,9 @@ __END__
 - if league.status == 0
   %p.todo @todo: [参加するボタン]
 &= league.values
+%h2 players
+- league.players.each do |player|
+  = link_to h(player.name), "/players/#{player.id}"
 
 
 @@ leagues
@@ -259,7 +262,7 @@ __END__
     = link_to h(str), "/leagues/#{league.id}"
 %h2 過去のリーグ
 .closed
-  - ClosedLeague.each do |league|
+  - ClosedLeague.limit(50).each do |league|
     - str = "league#{league.id}"
     = link_to h(str), "/leagues/#{league.id}"
 
