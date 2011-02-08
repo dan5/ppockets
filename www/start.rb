@@ -104,31 +104,32 @@ __END__
       %li
         = link_to h("#{@player.new_cards.count}枚の new card があります"), '/new_card'
 %h2 CARDS
-%table
+%table.cards
   %tr
+    %th idx
     %th name
     %th agi
     %th{:colspan=>2} off
     %th{:colspan=>2} def
     %th life
-    %th{:colspan=>4} swap
+    %th{:colspan=>2} swap
   - @player.cards_.each do |card|
     - i = card.position
     %tr
+      %td.c&= card.position + 1
       %td&= card.name
-      %td.r.agi&= card.agi_org
+      %td.c.agi&= card.agi_org
       %td.r&= card.off_org
       %td.plus&= plus_param(card, :off_plus)
       %td.r&= card.def_org
       %td.plus&= plus_param(card, :def_plus)
-      %td.r&= card.life
+      %td.c&= card.life
       %td
         - unless card.position == @player.cards_.count - 1
           = link_to 'V', "/cmd/swap/#{i}/#{i + 1}"
       %td
         - unless card.position == 0
           = link_to 'A', "/cmd/swap/#{i - 1}/#{i}"
-      %td.r&= card.position
 %h2 COMMANS
 - if @player.num_commands > 0
   .memo memo: リーグにエントリしたとき、または試合を行ったあと、次のコマンドを実行できます
@@ -158,8 +159,7 @@ __END__
             - str = "vs #{game.opponent(@player).name}"
             = link_to h(str), "/games/#{game.id}"
             &= '... '
-            = link_to h("league#{game.league.id}"), "/leagues/#{league.id}"
-            &= "の#{game.turn_count}試合目"
+            &= "#{game.turn_count}試合目"
     - else
       リーグには参加していません
 
@@ -182,8 +182,22 @@ __END__
 
 @@ players_show
 %h2&= @player.name
-%p.todo @todo: 成績表示
-&= @player.values
+%ul
+  %li
+    grade:
+    &= @player.grade
+  %li
+    wins:
+    &= @player.results_dataset.sum(:win_count)
+  %li
+    loses:
+    &= @player.results_dataset.sum(:lose_count)
+  %li
+    draws:
+    &= @player.results_dataset.sum(:draw_count)
+  %li
+    points:
+    &= @player.point
 %h2 今後の試合
 %ul
   - @player.next_games_.each do |game|
@@ -199,13 +213,6 @@ __END__
       = link_to h(str), "/games/#{game.id}"
       &= '... 0 - 0'
       &= card_logs.map {|e| "[#{e.name}]" }.join
-%h2 cards
-%p.todo @todo: ログインしていないと見えない
-%ul
-  - @player.cards.each do |card|
-    %li
-      - str = "#{card.name} #{card.agi}/#{card.off}/#{card.def}/#{card.life}"
-      &= str
 
 
 @@ players
@@ -270,21 +277,27 @@ __END__
 %html
   %head
     %style
+      = 'html{margin: 0 10}'
+      = 'h2{margin: 8 0 4 0; color: #999}'
+      = 'ul{margin: 10 0}'
       = '.debug_log {color: #F84}'
       = '.notice {color: #0A0}'
       = '.message a {color: red; font-weight: bold; text-decoration: underline;}'
       = '.memo {color: gray}'
       = '.todo {color: gray}'
+      = 'span.menu {margin-right: 10}'
       = '.r {text-align: right}'
-      = '.agi {font-weight: bold; padding: 0 10}'
+      = '.c {text-align: center}'
+      = 'table.cards th {padding: 0 5}'
+      = '.agi {font-weight: bold}'
       = '.plus {color: #666; font-size: 80%; vertical-align: bottom}'
       = 'a {text-decoration: none;}'
-  %table{:width=>'100%'}
+  %table.menu{:width=>'100%'}
     %tr
       %td
-        = link_to 'HOME', "/"
-        = link_to 'LEAGUES', "/leagues"
-        = link_to 'PLAYERS', "/players"
+        %span.menu= link_to 'HOME', "/"
+        %span.menu= link_to 'LEAGUES', "/leagues"
+        %span.menu= link_to 'PLAYERS', "/players"
       %td
         = link_to 'Login', "/"
   - if @debug_log

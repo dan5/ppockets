@@ -331,9 +331,9 @@ class Card < Sequel::Model
   def off_org() default_value(name)[1] end
   def def_org() default_value(name)[2] end
 
-  def agi() agi_arg end
-  def off() off_arg + off_plus end
-  def def() def_arg + def_plus end
+  def agi() agi_org end
+  def off() off_org + off_plus end
+  def def() def_org + def_plus end
   def job() :fig end
 
   def after_create
