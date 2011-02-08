@@ -262,11 +262,28 @@ __END__
     %th
     - players.each do |player|
       %th= player.short_name
-  - players.each.with_index do |player, i|
+  - players.each do |home_player|
     %tr
-      %td= link_to h(player.name), "/players/#{player.id}"
-      - players.each do
-        %td.c 4-2
+      %td= link_to h(home_player.name), "/players/#{home_player.id}"
+      - players.each do |away_player|
+        - ptn1 = { :home_player_id => home_player.id, :away_player_id => away_player.id }
+        - ptn2 = { :home_player_id => away_player.id, :away_player_id => home_player.id }
+        - game = Game.filter(:league_id => league.id).filter(ptn1 | ptn2).first
+        %td.c
+          - if game
+            - if game.played?
+              - if game.home_player.id == home_player.id
+                - str = "#{h game.home_score} - #{h game.away_score}"
+              - else
+                - str = "#{h game.away_score} - #{h game.home_score}"
+              = link_to h(str), "/games/#{game.id}"
+          - else
+            &= '-'
+
+%h2 Games
+- league.games.each do |game|
+  %p= h game.values
+
 
 
 
