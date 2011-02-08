@@ -169,11 +169,13 @@ class Player < Sequel::Model
     Int :stage
     Int :grade, :default => 0
     Int :point, :default => 0
+    Int :active_point, :default => 0
     Timestamp :loged_at
   }
   create_table unless table_exists?
 
   def name() user.name end
+  def short_name() name.length > 7 ? name[0, 6] + '..' : name end
   def games_() Game.filter('home_player_id = ? OR away_player_id = ?', id, id) end
   def next_games_() games_.filter(:played? => false) end
   def recent_games_() games_.filter(:played? => true).order(:id.desc) end
@@ -291,6 +293,7 @@ class Result < Sequel::Model
   create_table unless table_exists?
 end
 
+=begin
 class TotalResult < Sequel::Model
   many_to_one :player
   set_schema {
@@ -303,6 +306,7 @@ class TotalResult < Sequel::Model
   }
   create_table unless table_exists?
 end
+=end
 
 class NewCard < Sequel::Model
   many_to_one :player
@@ -437,7 +441,7 @@ end
 def close_leagues
   dump_method_name
   OpenedLeague.filter(:max_turn_count => :turn_count).each do |l|
-    l.players.each {|e| e.update(:entry? => false) }
+    l.players.each {|e| e.update(:entry? => false, :active_point => 0) }
     l.update(:status => 2)
     puts "close: #{l.id}"
   end
@@ -535,9 +539,9 @@ end
 
 def _update_results(game)
   [
-    [game.home_player, game.home_score - game.away_score],
-    [game.away_player, game.away_score - game.home_score]
-  ].each do |player, d|
+    [game.home_player, game.home_score , game.home_score - game.away_score],
+    [game.away_player, game.away_score , game.away_score - game.home_score]
+  ].each do |player, score, d|
     result = Result.find_or_create(:league_id => game.league.id, :player_id => player.id)
     pt = 0
     case
@@ -550,10 +554,13 @@ def _update_results(game)
     when d < 0 
       result.lose_count += 1
     end
-    result.score += 1
+    point = pt * 10000  + d * 100 + score
+    result.point += point
+    result.score += score
     result.winning_margin += d
     result.save
-    player.point += pt * 10000  + d * 100
+    player.point += point
+    player.active_point += point
     player.save
   end
 end

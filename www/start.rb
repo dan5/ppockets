@@ -3,11 +3,20 @@ require './ppockets-core.rb'
 require 'haml'
 require 'sinatra'
 require 'sinatra_more/markup_plugin'
+require 'sinatra_more/render_plugin'
 Sinatra::Base.register SinatraMore::MarkupPlugin
+Sinatra::Base.register SinatraMore::RenderPlugin
 #require 'haml/template'
 #Haml::Template.options[:escape_html] = true
 
 enable :sessions
+
+helpers do
+  def plus_param(card, meth)
+    param = card.__send__(meth)
+    param == 0 ? '' : "+#{param}"
+  end
+end
 
 before do
   @player = Player.find(:id => 1) # @todo: from login session
@@ -89,12 +98,30 @@ get '/dcmd/run_core' do
   redirect '/'
 end
 
-def plus_param(card, meth)
-  param = card.__send__(meth)
-  param == 0 ? '' : "+#{param}"
-end
-
 __END__
+@@ _player_ranking
+%table
+  %tr
+    %th name
+    %th grade
+    %th win
+    %th draw
+    %th lose
+    %th score
+    %th margin
+    %th point
+  - (@players_ || Player.order(:point.desc)).each do |player|
+    %tr
+      - results_ = player.results_dataset.filter(@result_ptn || {})
+      %td= link_to h(player.name), "/players/#{player.id}"
+      %td.r&= player.grade
+      %td.r&= results_.sum(:win_count)
+      %td.r&= results_.sum(:draw_count)
+      %td.r&= results_.sum(:lose_count)
+      %td.r&= results_.sum(:score)
+      %td.r&= results_.sum(:winning_margin)
+      %td.r.b&= ((results_.sum(:point) or 0) / 1000.0).round / 10.0
+
 
 @@ home
 - games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
@@ -217,36 +244,30 @@ __END__
 
 @@ players
 %h2 players
-%table
-  %tr
-    %td name
-    %td grade
-    %td win
-    %td draw
-    %td lose
-    %td margin
-    %td score
-    %td point
-  - Player.order(:point.desc).each do |player|
-    %tr
-      %td= link_to h(player.name), "/players/#{player.id}"
-      %td.r&= player.grade
-      %td.r&= player.results_dataset.sum(:win_count)
-      %td.r&= player.results_dataset.sum(:draw_count)
-      %td.r&= player.results_dataset.sum(:lose_count)
-      %td.r&= player.results_dataset.sum(:winning_margin)
-      %td.r&= player.results_dataset.sum(:score)
-      %td.r&= player.point / 10000.0
+= haml :_player_ranking
 
 
 @@ leagues_show
 - league = League.find(:id => params[:id])
 - if league.status == 0
   %p.todo @todo: [参加するボタン]
-&= league.values
-%h2 players
-- league.players.each do |player|
-  = link_to h(player.name), "/players/#{player.id}"
+%h2 Ranking
+- @players_ = league.players_dataset.order(:active_point.desc)
+- @result_ptn = {:league_id => league.id}
+= haml :_player_ranking
+%h2 League
+%table.league
+  - players = league.players
+  %tr
+    %th
+    - players.each do |player|
+      %th= player.short_name
+  - players.each.with_index do |player, i|
+    %tr
+      %td= link_to h(player.name), "/players/#{player.id}"
+      - players.each do
+        %td.c 4-2
+
 
 
 @@ leagues
@@ -291,6 +312,7 @@ __END__
       = 'span.menu {margin-right: 10}'
       = '.r {text-align: right}'
       = '.c {text-align: center}'
+      = '.b {font-weight: bold}'
       = 'table.cards th {padding: 0 5}'
       = '.agi {font-weight: bold}'
       = '.plus {color: #666; font-size: 80%; vertical-align: bottom}'
