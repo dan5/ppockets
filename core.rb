@@ -103,7 +103,7 @@ Sequel::Model.plugin(:schema)
 class GameEnvironment < Sequel::Model
   set_schema {
     primary_key :id
-    Int :max_players, :default => 6
+    Int :max_players, :default => 16
     Int :stage, :default => 1
   }
   unless table_exists?
@@ -260,6 +260,8 @@ class Game < Sequel::Model
   }
   create_table unless table_exists?
 
+  def home?(player) player == home_player end
+
   def validate
     assert home_player_id == away_player_id
   end
@@ -396,6 +398,7 @@ class DefaultCard < Hash
 end
 
 # -- core ---------------------
+# viva http://www.bea.hi-ho.ne.jp/ems-ontime/infotext1_8.html
 def game_combination(num_players)
   result = []
   tmp = (1...num_players).to_a # => [1, 2, 3, 4, 5, 6, 7]
@@ -660,7 +663,7 @@ if $0 == __FILE__ # cron part
 
   if $PP_Debug 
     srand(0)
-    debug_create_players(7) if Player.count == 0
+    debug_create_players(50) if Player.count == 0
   end
 
   run_game_times.times { run_core }

@@ -181,12 +181,23 @@ __END__
       = link_to h(str), "/leagues/#{league.id}"
       に参加しています
       %ul
-        - @player.next_games_.each do |game|
+        - @player.games_.filter(:league_id => league.id).each do |game|
           %li
-            - str = "vs #{game.opponent(@player).name}"
-            = link_to h(str), "/games/#{game.id}"
-            &= '... '
             &= "#{game.turn_count}試合目"
+            vs
+            = link_to h(game.opponent(@player).name), "/players/#{game.opponent(@player).id}"
+            - if game.played?
+              &= '... '
+              - if game.home_score == game.away_score
+                - res = 'draw'
+              - elsif game.home?(@player)
+                - res = game.home_score > game.away_score ? 'win' : 'lose'
+              - else
+                - res = game.home_score > game.away_score ? 'lose' : 'win'
+              = link_to h(res), "/games/#{game.id}"
+              &= game.home?(@player) ? game.home_score : game.away_score
+              &= '-'
+              &= game.home?(@player) ? game.away_score : game.home_score
     - else
       リーグには参加していません
 
@@ -279,12 +290,6 @@ __END__
               = link_to h(str), "/games/#{game.id}"
           - else
             &= '-'
-
-%h2 Games
-- league.games.each do |game|
-  %p= h game.values
-
-
 
 
 @@ leagues
