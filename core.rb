@@ -578,7 +578,8 @@ end
 def decrease_life
   dump_method_name
   OpenedLeague.each do |l|
-    if game = l.games_dataset.filter(:turn_count => l.turn_count - 1).first
+    games_ = l.games_dataset.filter(:turn_count => l.turn_count - 1)
+    games_.each do |game|
       puts "========================"
       assert !game.played?
       [game.home_player, game.away_player].each do |player|

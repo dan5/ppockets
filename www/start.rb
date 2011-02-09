@@ -56,7 +56,7 @@ get '/' do
   @notice = session[:notice]
   session[:debug_log] = nil
   session[:notice] = nil
-  haml :home
+  haml @player ? :home : :leagues
 end
 
 # -- cmd API -----------
