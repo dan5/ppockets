@@ -103,7 +103,6 @@ Sequel::Model.plugin(:schema)
 class GameEnvironment < Sequel::Model
   set_schema {
     primary_key :id
-    Int :max_players, :default => 16
     Int :stage, :default => 1
   }
   unless table_exists?
@@ -420,7 +419,7 @@ def create_leagues(n)
   dump_method_name
   return if WaitingLeague.count > 5
   n.times do
-    league = League.create(:max_players => GameEnv.max_players)
+    league = League.create(:max_players => Max_players_in_league)
     puts "    create_league id => #{league.id}"
   end
 end
@@ -578,12 +577,13 @@ end
 def decrease_life
   dump_method_name
   OpenedLeague.each do |l|
+    puts "=== deleted cards ====================="
     games_ = l.games_dataset.filter(:turn_count => l.turn_count - 1)
     games_.each do |game|
-      puts "========================"
       assert !game.played?
       [game.home_player, game.away_player].each do |player|
         cards_ = player.cards_dataset.filter('position < 5')
+        p cards_.filter('life <= 1').map(:id)
         cards_.filter('life <= 1').delete
         cards_.update('life = life - 1')
         player.order_card

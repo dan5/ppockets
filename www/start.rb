@@ -200,6 +200,13 @@ __END__
               &= game.home?(@player) ? game.away_score : game.home_score
     - else
       リーグには参加していません
+  %li
+    最近参加したリーグ
+    %ul
+      - @player.leagues_dataset.order(:id.desc).limit(3).each do | league|
+        %li
+          - str = "league#{league.id}"
+          = link_to h(str), "/leagues/#{league.id}"
 
 
 @@ new_card
@@ -301,7 +308,7 @@ __END__
 %h2 開催中のリーグ
 .opened
   - OpenedLeague.each do |league|
-    - str = "league#{league.id}(#{league.players_count})"
+    - str = "league#{league.id}"
     = link_to h(str), "/leagues/#{league.id}"
 %h2 過去のリーグ
 .closed
