@@ -16,6 +16,9 @@ helpers do
     param = card.__send__(meth)
     param == 0 ? '' : "+#{param}"
   end
+
+  def link_to_player(player) link_to h(player.name), "/players/#{player.id}" end
+  def link_to_league(league) link_to h("league#{league.id}"), "/leagues/#{league.id}" end
 end
 
 before do
@@ -113,7 +116,7 @@ __END__
   - (@players_ || Player.order(:point.desc)).each do |player|
     %tr
       - results_ = player.results_dataset.filter(@result_ptn || {})
-      %td= link_to h(player.name), "/players/#{player.id}"
+      %td= link_to_player player
       %td.r&= player.grade
       %td.r&= results_.sum(:win_count)
       %td.r&= results_.sum(:draw_count)
@@ -185,7 +188,7 @@ __END__
           %li
             &= "#{game.turn_count}試合目"
             vs
-            = link_to h(game.opponent(@player).name), "/players/#{game.opponent(@player).id}"
+            = link_to_player game.opponent(@player)
             - if game.played?
               &= '... '
               - if game.home_score == game.away_score
@@ -205,8 +208,7 @@ __END__
     %ul
       - @player.leagues_dataset.order(:id.desc).limit(3).each do | league|
         %li
-          - str = "league#{league.id}"
-          = link_to h(str), "/leagues/#{league.id}"
+          = link_to_league league
 
 
 @@ new_card
@@ -282,7 +284,7 @@ __END__
       %th= player.short_name
   - players.each do |home_player|
     %tr
-      %td= link_to h(home_player.name), "/players/#{home_player.id}"
+      %td= link_to_player home_player
       - players.each do |away_player|
         - ptn1 = { :home_player_id => home_player.id, :away_player_id => away_player.id }
         - ptn2 = { :home_player_id => away_player.id, :away_player_id => home_player.id }
@@ -308,13 +310,11 @@ __END__
 %h2 開催中のリーグ
 .opened
   - OpenedLeague.each do |league|
-    - str = "league#{league.id}"
-    = link_to h(str), "/leagues/#{league.id}"
+    = link_to_league league
 %h2 過去のリーグ
 .closed
   - ClosedLeague.limit(50).each do |league|
-    - str = "league#{league.id}"
-    = link_to h(str), "/leagues/#{league.id}"
+    = link_to_league league
 
 
 @@ games_show
