@@ -651,13 +651,12 @@ def run_core
   }
 end
 
-if $0 == __FILE__ # cron part
+if $0 == __FILE__
 
   if $PP_Debug 
-    srand(0)
     debug_create_players(50) if Player.count == 0
   end
 
   run_game_times.times { run_core }
 
-end # --- cron part
+end

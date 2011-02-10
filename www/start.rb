@@ -25,6 +25,11 @@ before do
   @player = Player.find(:id => 1) # @todo: from login session
 end
 
+require 'sass'
+get '/stylesheet.css' do
+  sass :stylesheet
+end
+
 get '/new_card' do
   if @player.new_cards.count == 0
     redirect '/'
@@ -329,23 +334,8 @@ __END__
 @@ layout
 %html
   %head
+    %link(rel='stylesheet' type='text/css' href='/stylesheet.css')
     %style
-      = 'html{margin: 0 10}'
-      = 'h2{margin: 8 0 4 0; color: #999}'
-      = 'ul{margin: 10 0}'
-      = '.debug_log {color: #F84}'
-      = '.notice {color: #0A0}'
-      = '.message a {color: red; font-weight: bold; text-decoration: underline;}'
-      = '.memo {color: gray}'
-      = '.todo {color: gray}'
-      = 'span.menu {margin-right: 10}'
-      = '.r {text-align: right}'
-      = '.c {text-align: center}'
-      = '.b {font-weight: bold}'
-      = 'table.cards th {padding: 0 5}'
-      = '.agi {font-weight: bold}'
-      = '.plus {color: #666; font-size: 80%; vertical-align: bottom}'
-      = 'a {text-decoration: none;}'
   %table.menu{:width=>'100%'}
     %tr
       %td
