@@ -1,3 +1,8 @@
+require 'sequel'
+root_path = File.dirname(File.expand_path(__FILE__)).untaint
+$LOAD_PATH.unshift root_path
+
+# -- DB connection
 DB = Sequel.sqlite
 
 # -- game setting
