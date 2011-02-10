@@ -2,6 +2,9 @@
 PP_version = '0.0.1'
 
 if $0 == __FILE__
+  root_path = File.dirname(File.expand_path(__FILE__)).untaint
+  $LOAD_PATH.unshift root_path
+
   require 'optparse'
   run_game_times = 1
   optparse = OptionParser.new {|opts|
