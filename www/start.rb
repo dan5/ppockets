@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require './ppockets-core.rb'
+require 'core.rb'
 require 'haml'
 require 'sinatra'
 require 'sinatra_more/markup_plugin'

@@ -1,17 +1,11 @@
 # -*- encoding: utf-8 -*-
-require 'sequel'
+PP_version = '0.0.1'
 
 if $0 == __FILE__
   require 'optparse'
-  rcfile = nil
   run_game_times = 1
   optparse = OptionParser.new {|opts|
     opts.banner = "Usage: ruby #{$0} [options]"
-
-    opts.separator "\nRequire options:"
-    opts.on("-r", "--rc [RCFILE]", "Specify rcfile(required)") {|f|
-      rcfile = f
-    }
 
     opts.separator "\nOptional:"
     opts.on("-d", "--debug", "Debug PPockets") {
@@ -21,15 +15,12 @@ if $0 == __FILE__
     opts.on("-t", "--times [n]", "Run game core n times") {|t|
       run_game_times = t.to_i
     }
+    opts.on("-h", "--help", "Show this help message and quit") {|t|
+      puts optparse
+      exit
+    }
   }
   optparse.parse!(ARGV)
-
-  unless rcfile and run_game_times > 0
-    puts optparse
-    exit
-  end
-  $LOAD_PATH.unshift('./')
-  load rcfile
 end
 
 # -- command ---------------------
