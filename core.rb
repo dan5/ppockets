@@ -1,5 +1,4 @@
 # -*- encoding: utf-8 -*-
-PP_version = '0.0.1'
 
 if $0 == __FILE__
   root_path = File.dirname(File.expand_path(__FILE__)).untaint
@@ -287,21 +286,6 @@ class Result < Sequel::Model
   }
   create_table unless table_exists?
 end
-
-=begin
-class TotalResult < Sequel::Model
-  many_to_one :player
-  set_schema {
-    primary_key :id
-    foreign_key :player_id, :players
-    Int :grade
-    Int :win, :default => 0
-    Int :lose, :default => 0
-    Int :draw, :default => 0
-  }
-  create_table unless table_exists?
-end
-=end
 
 class NewCard < Sequel::Model
   many_to_one :player
