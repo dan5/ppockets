@@ -74,11 +74,11 @@ module PlayerCommand
     DB.transaction {
       card_a.update(:position => b)
       card_b.update(:position => a)
-      order_card
+      order_cards
     }
   end
 
-  def order_card
+  def order_cards
     # @todo: updateを最小限に
     cards.each.with_index {|card, i| card.update(:position => i) }
   end
@@ -564,7 +564,7 @@ def decrease_life
         p cards_.filter('life <= 1').map(:id)
         cards_.filter('life <= 1').delete
         cards_.update('life = life - 1')
-        player.order_card
+        player.order_cards
       end
     end
   end
@@ -576,7 +576,6 @@ def deliver_card(players)
     player.new_cards_dataset.delete
     player.create_new_card
   end
-  #@rss_items << ["新しいカードが配られました（#{@game_env.day}日目）", "#{players.size}人のプレイヤーにカードが配られました。"]
 end
 
 def update_active_players(players)
@@ -587,6 +586,14 @@ def update_active_players(players)
   deliver_card players
 end
 
+def create_npc(n)
+  n.times do |i|
+    name = "npc%02d" % i
+    user = User.create(:name => name)
+    p player = Player.find_or_create(:user_id => user.id, :npc? => true)
+  end
+end
+
 # -- debug ---------------------
 def debug_dump_leagues
   puts OpenedLeague.map(&:dump_string)
@@ -595,15 +602,14 @@ end
 def debug_create_players(n)
   max_user_id = User.count + 1
   n.times do |i|
-    name = "testman%04d" % (i + max_user_id)
+    name = "testman%02d" % (i + max_user_id)
     user = User.create_from_twitter(i, name)
-    #user = User.create(:name => "testman%04d" % (i + max_user_id))
     p player = Player.find_or_create(:user_id => user.id, :game_master? => true)
   end
 end
 
 def debug_entry_players
-  Player.all.each do |player|
+  Player.filter(:npc? => true).each do |player|
     next if player.entry?
     if league = WaitingLeague.filter('players_count < max_players').first
       p player.user.name
@@ -641,7 +647,8 @@ end
 if $0 == __FILE__
 
   if $PP_Debug 
-    debug_create_players(50) if Player.count == 0
+    debug_create_players(5) if Player.count == 0
+    create_npc(10) if Player.filter(:npc? => true).count == 0
   end
 
   run_game_times.times { run_core }

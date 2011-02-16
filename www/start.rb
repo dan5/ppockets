@@ -3,11 +3,7 @@ require 'core.rb'
 require 'haml'
 require 'sinatra'
 require 'sinatra_more/markup_plugin'
-require 'sinatra_more/render_plugin'
 Sinatra::Base.register SinatraMore::MarkupPlugin
-Sinatra::Base.register SinatraMore::RenderPlugin
-#require 'haml/template'
-#Haml::Template.options[:escape_html] = true
 
 enable :sessions
 
