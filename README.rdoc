@@ -5,6 +5,10 @@ run core
 
  ruby -r ./config/defaultrc core.rb -d -t 1
 
+runt auth bot
+
+ ruby -r ./config/defaultrc.rb user_auth.rb
+
 boot server
 
  cd www

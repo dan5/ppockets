@@ -115,15 +115,17 @@ class User < Sequel::Model
   }
   create_table unless table_exists?
 
-  def self.create_from_twitter(twitter_id, name)
-    raise if TwitterAccount.find(:id_of_twitter => twitter_id)
-    account = TwitterAccount.create(:id_of_twitter => twitter_id)
-    unless account.user_id
-      user = User.create(:name => name, :login_password => name)
-      account.user = user
-      account.save
-    end
-    account.user
+  def self.create_from_twitter(twitter_id, name, login_password = nil)
+    raise "twitter_id:#{twitter_id} already exists. " if TwitterAccount.find(:id_of_twitter => twitter_id)
+    DB.transaction {
+      account = TwitterAccount.create(:id_of_twitter => twitter_id)
+      unless account.user_id
+        user = User.create(:name => name, :login_password => login_password)
+        account.user = user
+        account.save
+      end
+      account.user
+    }
   end
 end 
     

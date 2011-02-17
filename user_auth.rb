@@ -53,7 +53,9 @@ client = OAuthRubytter.new(data[:access_token])
 
 new_followeres_ids(data, client).each do |id|
   begin
-    client.direct_message(id, 'hello')
+    login_password = rand(100000000000000000000).to_s(36)
+    User.create_from_twitter(id, client.user(id).name, login_password)
+    client.direct_message(id, "http://localhost:9393/login/#{login_password}")
   rescue
     p $!
   end

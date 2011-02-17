@@ -18,12 +18,20 @@ helpers do
 end
 
 before do
-  @player = Player.find(:id => 1) # @todo: from login session
+  # login auth
+  if session[:login_password] && user = User.find(:login_password => session[:login_password])
+    @player = Player.find_or_create(:user_id => user.id)
+  end
 end
 
 require 'sass'
 get '/stylesheet.css' do
   sass :stylesheet
+end
+
+get '/login/:login_password' do
+  session[:login_password] = params[:login_password]
+  redirect '/'
 end
 
 get '/new_card' do
