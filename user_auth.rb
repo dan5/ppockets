@@ -1,5 +1,7 @@
 require 'rubytter'
 require 'yaml'
+$LOAD_PATH.unshift File.dirname(File.expand_path(__FILE__)).untaint
+require './core'
 
 Data_fname = 'db/twitter_data.yaml'
 def read
@@ -36,7 +38,7 @@ rescue
   save(:access_token => access_token, :followers_ids => [])
 end
 
-def new_followeres(data, client)
+def new_followeres_ids(data, client)
   screen_name = data[:access_token].params[:screen_name]
   followers_ids = client.followers_ids(screen_name)
   d = followers_ids - data[:followers_ids]
@@ -46,6 +48,13 @@ def new_followeres(data, client)
 end
 
 data = read_or_create_data()
+data[:followers_ids] = []
 client = OAuthRubytter.new(data[:access_token])
 
-p new_followeres(data, client)
+new_followeres_ids(data, client).each do |id|
+  begin
+    client.direct_message(id, 'hello')
+  rescue
+    p $!
+  end
+end
