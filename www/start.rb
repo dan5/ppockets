@@ -38,6 +38,12 @@ get '/login' do
   haml :login
 end
 
+get '/logout' do
+  session[:login_password] = nil
+  session[:notice] = "logout."
+  redirect '/'
+end
+
 get '/new_card' do
   if @player.new_cards.count == 0
     redirect '/'
@@ -363,7 +369,10 @@ __END__
         %span.menu= link_to 'LEAGUES', "/leagues"
         %span.menu= link_to 'PLAYERS', "/players"
       %td
-        = link_to 'Login', "/login"
+        - if @player
+          = link_to 'Logout', "/logout"
+        - else
+          = link_to 'Login', "/login"
   - if @debug_log
     .debug_log&= @debug_log
   - if @notice

@@ -408,7 +408,7 @@ end
 
 def create_leagues(n)
   dump_method_name
-  return if WaitingLeague.count > 5
+  return if WaitingLeague.count >= 3
   n.times do
     league = League.create(:max_players => Max_players_in_league)
     puts "    create_league id => #{league.id}"
