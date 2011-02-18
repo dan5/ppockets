@@ -8,5 +8,5 @@ DB = Sequel.sqlite(root_path + '/db/development.db')
 Max_players_in_league = 8
 
 # -- www setting
-Server_port = 2007
-Base_url = 'http://localhost:2007/'
+#Server_port = 2333
+Base_url = 'http://localhost:2333'

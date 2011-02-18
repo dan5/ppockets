@@ -31,7 +31,18 @@ module PlayerCommand
     command, *opts = args
     DB.transaction { r = __send__("cmd_#{command}", *opts) }
   rescue
-    "run cmd error"
+    raise "run cmd error: #{$!}"
+  end
+
+  def cmd_entry_league(league_id)
+    assert entry?
+    league = League.find(:id => league_id)
+    assert league.status != 0
+    assert league.players_count >= league.max_players
+    update(:entry? => true)
+    league.add_player(self)
+    league.players_count += 1
+    league.save
   end
 
   def cmd_draw_new_card
@@ -605,7 +616,7 @@ def debug_create_players(n)
   max_user_id = User.count + 1
   n.times do |i|
     name = "testman%02d" % (i + max_user_id)
-    user = User.create_from_twitter(i, name)
+    user = User.create_from_twitter(i, name, name + '5555') # todo: OUT!!!
     p player = Player.find_or_create(:user_id => user.id, :game_master? => true)
   end
 end
@@ -613,7 +624,7 @@ end
 def debug_entry_players
   Player.filter(:npc? => true).each do |player|
     next if player.entry?
-    if league = WaitingLeague.filter('players_count < max_players').first
+    if league = WaitingLeague.filter('players_count > 0 AND players_count < max_players').first
       p player.user.name
       player.update(:entry? => true)
       league.add_player(player)
@@ -624,7 +635,7 @@ def debug_entry_players
 end
 
 def debug_puts_new_card
-  Player.all.each do |player|
+  Player.filter(:npc? => true).each do |player|
     if new_card = player.new_cards_dataset.first
       player.cmd_put_new_card new_card.id
     end

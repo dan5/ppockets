@@ -34,6 +34,10 @@ get '/login/:login_password' do
   redirect '/'
 end
 
+get '/login' do
+  haml :login
+end
+
 get '/new_card' do
   if @player.new_cards.count == 0
     redirect '/'
@@ -53,6 +57,12 @@ end
 
 get '/leagues/:id' do
   haml :leagues_show
+end
+
+get '/leagues/:id/entry' do
+  @player.run_cmd :entry_league, params[:id]
+  session[:notice] = "リーグ#{params[:id]}にエントリしました"
+  redirect '/'
 end
 
 get '/leagues' do
@@ -111,6 +121,10 @@ get '/dcmd/run_core' do
 end
 
 __END__
+@@ login
+%p.todo todo: login form
+
+
 @@ _player_ranking
 %table
   %tr
@@ -278,8 +292,10 @@ __END__
 
 @@ leagues_show
 - league = League.find(:id => params[:id])
-- if league.status == 0
-  %p.todo @todo: [参加するボタン]
+- if league.status == 0 and (@player and !@player.entry?)
+  %p.todo @todo: リーグのスペック表示
+  .entry_button
+    = link_to 'このリーグに参加する', "/leagues/#{league.id}/entry"
 %h2 Ranking
 - @players_ = league.players_dataset.order(:active_point.desc)
 - @result_ptn = {:league_id => league.id}
@@ -347,7 +363,7 @@ __END__
         %span.menu= link_to 'LEAGUES', "/leagues"
         %span.menu= link_to 'PLAYERS', "/players"
       %td
-        = link_to 'Login', "/"
+        = link_to 'Login', "/login"
   - if @debug_log
     .debug_log&= @debug_log
   - if @notice

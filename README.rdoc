@@ -12,7 +12,7 @@ runt auth bot
 boot server
 
  cd www
- ruby -I ../ -r ../config/defaultrc start.rb
+ ruby -I ../ -r ../config/defaultrc start.rb -p 2333
 
 == idea
 
