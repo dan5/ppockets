@@ -162,6 +162,7 @@ class Player < Sequel::Model
   one_to_many :home_games, :class => :Game, :key => :home_player_id
   one_to_many :away_games, :class => :Game, :key => :away_player_id
   one_to_many :results
+  one_to_many :logs
   set_schema {
     primary_key :id
     foreign_key :user_id, :users
@@ -194,6 +195,15 @@ class Player < Sequel::Model
     5.times do |i|
       Card.create(:player_id => self.id, :position => i)
     end
+  end
+
+  def create_log(message)
+    log = Log.create(:player_id => id, :message => message)
+    add_log log
+  end
+
+  def delete_logs
+    logs_dataset.delete
   end
 
   def validate
@@ -387,6 +397,16 @@ class DefaultCard < Hash
   end
 end
 
+class Log < Sequel::Model
+  many_to_one :player
+  set_schema {
+    primary_key :id
+    foreign_key :player_id, :players
+    String :message
+  }
+  create_table unless table_exists?
+end
+
 # -- core ---------------------
 # viva http://www.bea.hi-ho.ne.jp/ems-ontime/infotext1_8.html
 def game_combination(num_players)
@@ -427,6 +447,9 @@ def open_leagues
       end
     end
     league.update(:status => 1)
+    league.players.each do |player|
+      player.create_log "リーグが開幕しました"
+    end
     puts "    open_league id => #{league.id}"
   end
 end

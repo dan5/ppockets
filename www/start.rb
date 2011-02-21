@@ -22,6 +22,14 @@ before do
   if session[:login_password] && user = User.find(:login_password => session[:login_password])
     @player = Player.find_or_create(:user_id => user.id)
   end
+  if @player and @player.logs_dataset.count > 0
+    redirect '/logs'
+  else
+    @debug_log = session[:debug_log]
+    @notice = session[:notice]
+    session[:debug_log] = nil
+    session[:notice] = nil
+  end
 end
 
 require 'sass'
@@ -42,6 +50,16 @@ get '/logout' do
   session[:login_password] = nil
   session[:notice] = "logout."
   redirect '/'
+end
+
+get '/logs/delete_all' do
+  @player.delete_logs
+  redirect '/'
+end
+
+get '/logs' do
+  @logs = @player.logs
+  haml :logs
 end
 
 get '/new_card' do
@@ -80,10 +98,6 @@ get '/games/:id' do
 end
 
 get '/' do
-  @debug_log = session[:debug_log]
-  @notice = session[:notice]
-  session[:debug_log] = nil
-  session[:notice] = nil
   haml @player ? :home : :leagues
 end
 
@@ -238,6 +252,14 @@ __END__
       - @player.leagues_dataset.order(:id.desc).limit(3).each do | league|
         %li
           = link_to_league league
+
+
+@@ logs
+%h2 Logs
+.logs
+  - @logs.each do |log|
+    %p&= log.message
+= link_to 'ok', '/logs/delete_all'
 
 
 @@ new_card
