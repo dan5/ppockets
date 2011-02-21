@@ -23,7 +23,7 @@ before do
     @player = Player.find_or_create(:user_id => user.id)
   end
   if @player and @player.logs_dataset.count > 0
-    redirect '/logs'
+    #redirect '/logs'
   else
     @debug_log = session[:debug_log]
     @notice = session[:notice]
