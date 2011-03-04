@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 require 'core.rb'
 require 'haml'
+require 'sinatra/reloader'
 require 'sinatra'
 require 'sinatra_more/markup_plugin'
 Sinatra::Base.register SinatraMore::MarkupPlugin
@@ -15,6 +16,13 @@ helpers do
 
   def link_to_player(player) link_to h(player.name), "/players/#{player.id}" end
   def link_to_league(league) link_to h("league#{league.id}"), "/leagues/#{league.id}" end
+  def path_info() @env['PATH_INFO'] end
+
+  def redirect_logs
+    return if path_info[/^\/logs/]
+    return if @player.nil? || @player.logs_dataset.count == 0
+    redirect '/logs'
+  end
 end
 
 before do
@@ -22,14 +30,11 @@ before do
   if session[:login_password] && user = User.find(:login_password => session[:login_password])
     @player = Player.find_or_create(:user_id => user.id)
   end
-  if @player and @player.logs_dataset.count > 0
-    #redirect '/logs'
-  else
-    @debug_log = session[:debug_log]
-    @notice = session[:notice]
-    session[:debug_log] = nil
-    session[:notice] = nil
-  end
+  redirect_logs
+  @debug_log = session[:debug_log]
+  @notice = session[:notice]
+  session[:debug_log] = nil
+  session[:notice] = nil
 end
 
 require 'sass'
@@ -54,6 +59,7 @@ end
 
 get '/logs/delete_all' do
   @player.delete_logs
+  session[:debug_log] = 'clear logs.'
   redirect '/'
 end
 

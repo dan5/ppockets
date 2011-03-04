@@ -457,7 +457,10 @@ end
 def close_leagues
   dump_method_name
   OpenedLeague.filter(:max_turn_count => :turn_count).each do |l|
-    l.players.each {|e| e.update(:entry? => false, :active_point => 0) }
+    l.players.each do |player|
+      player.update(:entry? => false, :active_point => 0)
+      player.create_log "リーグが終了しました"
+    end
     l.update(:status => 2)
     puts "close: #{l.id}"
   end
@@ -542,6 +545,9 @@ def do_game(game)
   set_score(game, game_logs)
   puts "log: #{game.home_score}-#{game.away_score} #{game_logs.inspect}"
   game.update(:played? => true)
+  [game.home_player, game.away_player].each do |player|
+    player.create_log "試合が行われました"
+  end
 end
 
 def do_games
