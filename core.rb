@@ -280,8 +280,7 @@ def active_league_dataset(status)
   end
   League.filter(:status => status).filter(ptn).order(:id.desc)
 end
-# @todo: datasetを動的な定数として作ろうとしているところに矛盾がある
-#        定数をやめて純粋なメソッドにすべき
+
 WaitingLeague = League.filter(:status => 0).order(:id.desc) # @todo
 OpenedLeague = League.filter(:status => 1).order(:id.desc)
 ClosedLeague = League.filter(:status => 2).order(:id.desc)
@@ -735,12 +734,6 @@ end
 def logp(str, b = binding) puts "#{str} => #{eval(str, b)}" end
 
 if $0 == __FILE__
-
-  #game_env.update(:game_time => 4)
-  #logp 'game_env.game_time'
-  #p active_waiting_league.all
-  #p active_waiting_league.count
-  #exit
 
   if $PP_Debug 
     debug_create_players(5) if Player.count == 0
