@@ -1,17 +1,8 @@
 
 == debug
 
-run core
-
  ruby -r ./config/defaultrc core.rb -d -t 1
-
-run auth bot
-
  ruby -r ./config/defaultrc.rb user_auth.rb
-
-boot server
-
- cd www
  ruby -I ../ -r ../config/defaultrc start.rb -p 2333
 
 == idea

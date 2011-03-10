@@ -41,10 +41,10 @@ end
 def new_followeres_ids(data, client)
   screen_name = data[:access_token].params[:screen_name]
   followers_ids = client.followers_ids(screen_name)
-  d = followers_ids - data[:followers_ids]
+  news = followers_ids - data[:followers_ids]
   data[:followers_ids] = followers_ids
   save(data)
-  d
+  news
 end
 
 data = read_or_create_data()

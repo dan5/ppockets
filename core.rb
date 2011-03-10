@@ -6,6 +6,7 @@ if $0 == __FILE__
 
   require 'optparse'
   run_game_times = 1
+  game_time = nil;
   optparse = OptionParser.new {|opts|
     opts.banner = "Usage: ruby #{$0} [options]"
 
@@ -16,6 +17,9 @@ if $0 == __FILE__
     }
     opts.on("-t", "--times [n]", "Run game core n times") {|t|
       run_game_times = t.to_i
+    }
+    opts.on("-s", "--setgametime [n]", "Set GameEnvironment.game_time") {|t|
+      game_time = t
     }
     opts.on("-h", "--help", "Show this help message and quit") {|t|
       puts optparse
@@ -108,13 +112,25 @@ class GameEnvironment < Sequel::Model
   set_schema {
     primary_key :id
     Int :stage, :default => 1
+    Int :game_time, :default => 0
   }
   unless table_exists?
     create_table
     self.create
   end
+
+  Schedules = {
+    :keroro => [ 4],
+    :tamama => [ 4,16],
+    :giroro => [ 4,10,16,20],
+    :dororo => (9..15).to_a,
+    :kururu => (0..23).to_a,
+  }
 end 
-GameEnv = GameEnvironment.find(:id => 1)
+
+def game_env
+  GameEnvironment.first
+end
     
 class User < Sequel::Model
   one_to_one :player
@@ -221,6 +237,7 @@ class League < Sequel::Model
   many_to_many :players
   set_schema {
     primary_key :id
+    String :schedule_type, :default => :keroro
     Int :status, :default => 0 # 0:waiting 1:opened 2:closed
     Int :turn_count, :default => 0
     Int :max_turn_count
@@ -243,9 +260,34 @@ class League < Sequel::Model
   end
 end
 
+def league_dataset(status)
+  League.filter(:status => status).order(:id.desc)
+end
+
+def active_league_dataset(status)
+  time = game_env.game_time
+  ptn = nil
+  puts "time: #{time}"
+  GameEnvironment::Schedules.each do |name, value|
+    if value.include?(time)
+      puts "active: #{name}"
+      if ptn.nil?
+        ptn = { :schedule_type => name.to_s }
+      else
+        ptn |= { :schedule_type => name.to_s }
+      end
+    end
+  end
+  League.filter(:status => status).filter(ptn).order(:id.desc)
+end
+# @todo: datasetを動的な定数として作ろうとしているところに矛盾がある
+#        定数をやめて純粋なメソッドにすべき
 WaitingLeague = League.filter(:status => 0).order(:id.desc) # @todo
 OpenedLeague = League.filter(:status => 1).order(:id.desc)
 ClosedLeague = League.filter(:status => 2).order(:id.desc)
+def active_waiting_league() active_league_dataset(0) end
+def active_opened_league() active_league_dataset(1) end
+def active_closed_league() active_league_dataset(2) end
 
 unless DB.table_exists?(:leagues_players)
   DB.create_table :leagues_players do
@@ -436,7 +478,7 @@ def create_leagues(n)
 end
 
 def open_leagues
-  WaitingLeague.all.select{|l| l.players.count == l.max_players }.each do |league|
+  active_waiting_league.all.select{|l| l.players.count == l.max_players }.each do |league|
     combi = game_combination(league.max_players)
     combi.each.with_index do |cmb, turn_count|
       cmb.each do |home_idx, away_idx|
@@ -468,7 +510,7 @@ end
 
 def update_leagues
   dump_method_name
-  active_leagues_ = OpenedLeague # @todo: 更新するリーグを選択する
+  active_leagues_ = active_league_dataset(1)
   active_leagues_.update('turn_count = turn_count + 1')
   update_active_players active_leagues_.all.map(&:players).flatten
 end
@@ -552,7 +594,8 @@ end
 
 def do_games
   dump_method_name
-  League.filter('turn_count > 0').each do |l| # @todo: join tables
+  logp 'active_opened_league.count'
+  active_opened_league.filter('turn_count > 0').each do |l| # @todo: join tables
     games = l.games_dataset.filter(:turn_count => l.turn_count)
     assert games.filter(:played? => true).count > 0
     games.each {|e| do_game(e) }
@@ -588,7 +631,7 @@ def _update_results(game)
 end
 
 def update_results
-  League.filter('turn_count > 0').each do |l| # @todo: join tables
+  active_opened_league.filter('turn_count > 0').each do |l| # @todo: join tables
     games = l.games_dataset.filter(:turn_count => l.turn_count)
     games.each {|e| _update_results(e) }
   end
@@ -596,7 +639,7 @@ end
 
 def decrease_life
   dump_method_name
-  OpenedLeague.each do |l|
+  active_opened_league.each do |l|
     puts "=== deleted cards ====================="
     games_ = l.games_dataset.filter(:turn_count => l.turn_count - 1)
     games_.each do |game|
@@ -638,7 +681,7 @@ end
 
 # -- debug ---------------------
 def debug_dump_leagues
-  puts OpenedLeague.map(&:dump_string)
+  #puts OpenedLeague.map(&:dump_string)
 end
 
 def debug_create_players(n)
@@ -673,6 +716,7 @@ end
 
 def run_core
   DB.transaction {
+    logp 'game_env.game_time'
     create_leagues(Player.count / 4)
     debug_entry_players if $PP_Debug
     open_leagues
@@ -683,16 +727,30 @@ def run_core
     decrease_life
     close_leagues
     debug_puts_new_card if $PP_Debug
+    GameEnvironment.update('game_time = game_time + 1')
+    GameEnvironment.filter('game_time >= 24').update('game_time = 0')
   }
 end
 
+def logp(str, b = binding) puts "#{str} => #{eval(str, b)}" end
+
 if $0 == __FILE__
+
+  #game_env.update(:game_time => 4)
+  #logp 'game_env.game_time'
+  #p active_waiting_league.all
+  #p active_waiting_league.count
+  #exit
 
   if $PP_Debug 
     debug_create_players(5) if Player.count == 0
     create_npc(10) if Player.filter(:npc? => true).count == 0
   end
 
-  run_game_times.times { run_core }
+  if game_time
+    game_env.update(:game_time => game_time)
+    puts "game_env.update(:game_time => #{game_time})"
+  end
 
+  run_game_times.times { run_core }
 end

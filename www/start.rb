@@ -335,6 +335,9 @@ __END__
 - @result_ptn = {:league_id => league.id}
 = haml :_player_ranking
 %h2 League
+%p
+  type:
+  = league.schedule_type
 %table.league
   - players = league.players
   %tr
