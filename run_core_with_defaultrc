@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+times = ARGV.shift || 1
+opts = ARGV.shift
+system "ruby -r ./config/defaultrc core.rb -d -t #{times} #{opts}"

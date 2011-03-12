@@ -1,0 +1,1 @@
+ruby -I ../ -r ../config/defaultrc ./start.rb -p 2333

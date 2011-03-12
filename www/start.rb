@@ -330,14 +330,12 @@ __END__
   %p.todo @todo: リーグのスペック表示
   .entry_button
     = link_to 'このリーグに参加する', "/leagues/#{league.id}/entry"
+%h1== #{h league.schedule_type.capitalize} League
 %h2 Ranking
 - @players_ = league.players_dataset.order(:active_point.desc)
 - @result_ptn = {:league_id => league.id}
 = haml :_player_ranking
 %h2 League
-%p
-  type:
-  = league.schedule_type
 %table.league
   - players = league.players
   %tr
