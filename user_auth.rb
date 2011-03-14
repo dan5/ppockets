@@ -1,7 +1,7 @@
 require 'rubytter'
 require 'yaml'
 $LOAD_PATH.unshift File.dirname(File.expand_path(__FILE__)).untaint
-require './core'
+require './core.rb'
 
 Data_fname = 'db/twitter_data.yaml'
 def read

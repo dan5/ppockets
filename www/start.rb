@@ -410,6 +410,8 @@ __END__
   = yield
   .footer
     %hr
+    .debug
+      == time: #{h game_env.game_time}
     .debug_commands
       = link_to 'Run core', "/dcmd/run_core"
     ppockets

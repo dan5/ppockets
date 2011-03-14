@@ -40,3 +40,21 @@
 == memo
 
 git reset --soft 'HEAD^'
+
+=== production
+
+ ruby -I ../ -r config/productionrc.rb start.rb -p 2333 -e=production
+
+=== production.rb
+
+ENV["GEM_HOME"] ||= "/home/dan/.rvm/gems/ruby-1.9.2-p136"
+ENV["GEM_PATH"] ||= "/home/dan/.rvm/gems/ruby-1.9.2-p136:/home/dan/.rvm/gems/ruby-1.9.2-p136@global"
+require 'sequel'
+
+root_path = File.dirname(File.expand_path(__FILE__)).untaint + '/..'
+DB = Sequel.sqlite(root_path + '/db/production.db')
+
+# -- game setting
+Max_players_in_league = 8
+Base_url = 'http://www3073u.sakura.ne.jp:2333'
+~
