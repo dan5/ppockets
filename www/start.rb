@@ -44,7 +44,12 @@ end
 
 get '/login/:login_password' do
   session[:login_password] = params[:login_password]
-  redirect '/'
+  if user = User.find(:login_password => session[:login_password])
+    session[:notice] = "#{user.name}さん、ようこそ！"
+    redirect '/'
+  else
+    'Log in failure'
+  end
 end
 
 get '/login' do
