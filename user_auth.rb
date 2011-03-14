@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 require 'rubytter'
 require 'yaml'
 root = File.dirname(File.expand_path(__FILE__)).untaint
@@ -48,16 +50,23 @@ def new_followeres_ids(data, client)
   news
 end
 
+def msg(client, message)
+  puts message
+  client.update message
+end
+
 data = read_or_create_data()
-data[:followers_ids] = []
 client = OAuthRubytter.new(data[:access_token])
 
 new_followeres_ids(data, client).each do |id|
   begin
     login_password = rand(100000000000000000000).to_s(36)
-    User.create_from_twitter(id, client.user(id).name, login_password)
-    client.direct_message(id, "#{Base_url}/login/#{login_password}")
+    name = client.user(id).name
+    User.create_from_twitter(id, name, login_password)
+    msg(client, "#{name}を作成しました")
   rescue
     p $!
   end
+  client.direct_message(id, "#{Base_url}/login/#{login_password}")
+  msg(client, "#{name}にログインパスワードを送信しました")
 end
