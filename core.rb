@@ -118,14 +118,6 @@ class GameEnvironment < Sequel::Model
     create_table
     self.create
   end
-
-  Schedules = {
-    :keroro => [ 4],
-    :tamama => [ 4,16],
-    :giroro => [ 4,10,16,20],
-    :dororo => (9..15).to_a,
-    :kururu => (0..23).to_a,
-  }
 end 
 
 def game_env
@@ -237,7 +229,7 @@ class League < Sequel::Model
   many_to_many :players
   set_schema {
     primary_key :id
-    String :schedule_type, :default => :keroro
+    String :schedule_type
     Int :status, :default => 0 # 0:waiting 1:opened 2:closed
     Int :turn_count, :default => 0
     Int :max_turn_count
@@ -249,6 +241,10 @@ class League < Sequel::Model
   }
   create_table unless table_exists?
 
+  def validate
+    assert schedule_type.nil?
+  end
+
   def after_create
     super
     self.max_turn_count = max_players - 1 + 1
@@ -258,6 +254,18 @@ class League < Sequel::Model
   def dump_string
     "id: #{id} " + games.map(&:dump_string).join(' ')
   end
+
+  def schedule
+    Schedules[schedule_type.to_sym]
+  end
+
+  Schedules = {
+    :keroro => [ 4],
+    :tamama => [ 4,16],
+    :giroro => [ 4,10,16,20],
+    :dororo => (9..15).to_a,
+    :kururu => (0..23).to_a,
+  }
 end
 
 def league_dataset(status)
@@ -268,7 +276,7 @@ def active_league_dataset(status)
   time = game_env.game_time
   ptn = nil
   puts "time: #{time}"
-  GameEnvironment::Schedules.each do |name, value|
+  League::Schedules.each do |name, value|
     if value.include?(time)
       puts "active: #{name}"
       if ptn.nil?
@@ -469,11 +477,11 @@ end
 
 def create_leagues(n)
   dump_method_name
-  return if WaitingLeague.count >= 3
-  n.times do
-    league = League.create(:max_players => Max_players_in_league)
-    puts "    create_league id => #{league.id}"
-  end
+  %w(keroro tamama dororo).each do |name|
+    next if WaitingLeague.filter(:schedule_type => name).count >= 1
+    league = League.create(:max_players => Max_players_in_league, :schedule_type => name)
+    puts "    create #{name} league id: #{league.id}"
+  end 
 end
 
 def open_leagues
@@ -734,7 +742,6 @@ end
 def logp(str, b = binding) puts "#{str} => #{eval(str, b)}" end
 
 if $0 == __FILE__
-
   if $PP_Debug 
     debug_create_players(5) if Player.count == 0
     create_npc(10) if Player.filter(:npc? => true).count == 0

@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-require 'core.rb'
-require 'haml'
-require 'sinatra/reloader'
 require 'sinatra'
+require 'sinatra/reloader' if development?
 require 'sinatra_more/markup_plugin'
+require 'haml'
+require 'core.rb'
 Sinatra::Base.register SinatraMore::MarkupPlugin
 
 enable :sessions
@@ -326,11 +326,12 @@ __END__
 
 @@ leagues_show
 - league = League.find(:id => params[:id])
+%h1== #{h league.schedule_type.capitalize} League
+%p== 更新: #{h league.schedule.join('時 ')}時
 - if league.status == 0 and (@player and !@player.entry?)
-  %p.todo @todo: リーグのスペック表示
   .entry_button
     = link_to 'このリーグに参加する', "/leagues/#{league.id}/entry"
-%h1== #{h league.schedule_type.capitalize} League
+    %hr
 %h2 Ranking
 - @players_ = league.players_dataset.order(:active_point.desc)
 - @result_ptn = {:league_id => league.id}
