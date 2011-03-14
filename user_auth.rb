@@ -52,10 +52,11 @@ end
 
 def msg(client, message)
   puts message
-  client.update message
+  #client.update message
 end
 
 data = read_or_create_data()
+# data[:followers_ids] = []
 client = OAuthRubytter.new(data[:access_token])
 
 new_followeres_ids(data, client).each do |id|
@@ -65,6 +66,7 @@ new_followeres_ids(data, client).each do |id|
     User.create_from_twitter(id, name, login_password)
     msg(client, "#{name}を作成しました")
   rescue
+    User.update_login_password(id, name, login_password)
     p $!
   end
   client.direct_message(id, "#{Base_url}/login/#{login_password}")

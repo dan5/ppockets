@@ -146,6 +146,11 @@ class User < Sequel::Model
       account.user
     }
   end
+
+  def self.update_login_password(twitter_id, name, login_password)
+    account = TwitterAccount.find(:id_of_twitter => twitter_id)
+    account.user.update(:login_password => login_password)
+  end
 end 
     
 class TwitterAccount < Sequel::Model
