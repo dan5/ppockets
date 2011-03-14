@@ -1,9 +1,10 @@
 require 'rubytter'
 require 'yaml'
-$LOAD_PATH.unshift File.dirname(File.expand_path(__FILE__)).untaint
-require './core.rb'
+root = File.dirname(File.expand_path(__FILE__)).untaint
+$LOAD_PATH.unshift root
+require 'core.rb'
 
-Data_fname = 'db/twitter_data.yaml'
+Data_fname = "#{root}/db/twitter_data.yaml"
 def read
   raise unless File.exist?(Data_fname)
   YAML.load(File.read(Data_fname))
