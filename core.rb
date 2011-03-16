@@ -34,8 +34,6 @@ module PlayerCommand
   def run_cmd(*args)
     command, *opts = args
     DB.transaction { r = __send__("cmd_#{command}", *opts) }
-  rescue
-    raise "run cmd error: #{$!}"
   end
 
 private
@@ -96,17 +94,17 @@ private
   end
 
   def cmd_buy_card(stock_id, pre_price)
-    stock = CardStock.find(:id => stock_id)
-    raise unless stock.stock > 0
-    raise unless pre_price == stock.price
-    raise unless jewel >= stock.price
+    stock = CardStock.find(:id => stock_id) || raise()
+    raise 'stockがありません' unless stock.stock > 0 # @todo: notice
+    raise 'priceが変動しています' unless pre_price == stock.price # @todo: notice
+    raise 'jewelが不足しています' unless jewel >= stock.price # @todo: notice
     self.jewel -= stock.price
     self.save
     stock.price *= 1.2
     stock.price = [10000, stock.price].min
     stock.stock -= 1
     stock.save
-    create_new_card
+    create_new_card(stock.name)
   end
 end
 
@@ -221,8 +219,7 @@ class Player < Sequel::Model
     cards.each.with_index {|card, i| card.update(:position => i) }
   end
 
-  def create_new_card
-    name = Card.sample_name
+  def create_new_card(name = Card.sample_name)
     NewCard.create(:player_id => id, :name => name)
   end
 
@@ -741,8 +738,8 @@ def card_shop
   end
   max = 10000
   min = 10
-  CardStock.filter('stock <= 0 AND price < ?', max).update "price = round(price * 1.1)"
-  CardStock.filter('stock >= 1 AND price > ?', min).update "price = round(price * 0.95)"
+  CardStock.filter('stock <= 0 AND price < ?', max).update 'price = round(price * 1.1)' # @todo
+  CardStock.filter('stock >= 1 AND price > ?', min).update 'price = round(price * 0.95)' # @todo
   CardStock.filter('price < ?', min).update(:price => min)
   CardStock.filter('price > ?', max).update(:price => max)
 end

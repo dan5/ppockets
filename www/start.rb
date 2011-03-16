@@ -37,6 +37,11 @@ before do
   session[:notice] = nil
 end
 
+error do
+  exc = request.env['sinatra.error']
+  "ppockets error: `#{exc.message}' -- #{exc.backtrace.first}"
+end
+
 require 'sass'
 get '/stylesheet.css' do
   sass :stylesheet
