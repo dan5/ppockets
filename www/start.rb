@@ -108,6 +108,12 @@ get '/games/:id' do
   haml :games_show
 end
 
+get '/cards/stock' do
+  @cards_notice = session[:cards_notice]
+  session[:cards_notice] = nil
+  haml :cards_stock
+end
+
 get '/' do
   haml @player ? :home : :leagues
 end
@@ -141,6 +147,13 @@ get '/cmd/swap/:a/:b' do
   @player.swap_cards params[:a].to_i, params[:b].to_i
   session[:notice] = "swap cards(#{params[:a]}, #{params[:b]})"
   redirect '/'
+end
+
+get '/cmd/buy_card/:id/:pre_price' do
+  @player.buy_card params[:id], params[:pre_price].to_i
+  stock = CardStock.find(:id => params[:id])
+  session[:cards_notice] = "#{stock.name}を買いました"
+  redirect '/cards/stock'
 end
 
 get '/dcmd/run_core' do
@@ -403,6 +416,7 @@ __END__
         %span.menu= link_to 'HOME', "/"
         %span.menu= link_to 'LEAGUES', "/leagues"
         %span.menu= link_to 'PLAYERS', "/players"
+        %span.menu= link_to 'CARDS', "/cards/stock"
       %td
         - if @player
           = link_to 'Logout', "/logout"

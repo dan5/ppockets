@@ -1,0 +1,38 @@
+%h2 Card Shop
+
+== 所持金: #{h @player.jewel} jewels
+
+- if @cards_notice
+  .notice&= @cards_notice
+.message
+  - if params[:prebuy]
+    - stock = CardStock.find(:id => params[:id])
+    %p
+      == #{h stock.name}を#{h stock.price}jで買いますか？
+      = link_to '買う', "/cmd/buy_card/#{stock.id}/#{stock.price}"
+  - else
+    %p いらっしゃいませ！
+
+%table
+  %tr
+    %th name
+    %th agi
+    %th off
+    %th def
+    %th life
+    %th stock
+    %th price
+  - CardStock.each do |stock|
+    %tr
+      - card = stock.card
+      %td.l!= card.name
+      %td.r!= card.agi_org
+      %td.r!= card.off_org
+      %td.r!= card.def_org
+      %td.r!= card.life_org
+      %td.r!= stock.stock
+      %td.r
+        - if stock.stock > 0 and @player.jewel >= stock.price
+          = link_to h(stock.price), "/cards/stock?id=#{h stock.id}&prebuy=true"
+        - else
+          &= stock.price

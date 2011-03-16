@@ -93,6 +93,20 @@ module PlayerCommand
     }
   end
 
+  def buy_card(stock_id, pre_price)
+    stock = CardStock.find(:id => stock_id)
+    raise unless stock.stock > 0
+    raise unless pre_price == stock.price
+    raise unless jewel >= stock.price
+    self.jewel -= stock.price
+    self.save
+    stock.price *= 1.2
+    stock.price = [10000, stock.price].min
+    stock.stock -= 1
+    stock.save
+    create_new_card
+  end
+
   def order_cards
     # @todo: updateを最小限に
     cards.each.with_index {|card, i| card.update(:position => i) }
@@ -390,6 +404,7 @@ class Card < Sequel::Model
   def agi_org() default_value(name)[0] end
   def off_org() default_value(name)[1] end
   def def_org() default_value(name)[2] end
+  def life_org() default_value(name)[3] end
 
   def agi() agi_org end
   def off() off_org + off_plus end
@@ -417,11 +432,23 @@ class Card < Sequel::Model
 
   Values = {
     # name       ag of df li
-    'keroro' => [ 4, 4, 4, 5],
-    'tamama' => [ 2, 5, 2, 3],
-    'giroro' => [ 5, 6, 3, 4],
-    'dororo' => [ 6, 3, 5, 2],
-    'kururu' => [ 3, 2, 6, 4],
+    'keroro' => [ 3, 3, 2, 9],
+    'tamama' => [ 3, 4, 2, 7],
+    'giroro' => [ 5, 6, 6, 6],
+    'dororo' => [ 6, 3, 5, 6],
+    'kururu' => [ 3, 2, 6, 5],
+
+    'garuru' => [ 7, 7, 7, 3],
+    'taruru' => [ 2, 2, 3, 5],
+    'tororo' => [ 4, 3, 7, 3],
+    'zoruru' => [ 1, 5, 5, 2],
+    'pururu' => [ 2, 2, 4, 5],
+
+    'fuyuki' => [ 3, 2, 1, 3],
+    'momoka' => [ 3, 1, 1, 2],
+    'natsumi' => [ 4, 6, 4, 5],
+    'koyuki' => [ 7, 3, 6, 5],
+    'mutsumi' => [ 5, 6, 6, 3],
   }
 end 
 
@@ -459,6 +486,20 @@ class Log < Sequel::Model
     String :message
   }
   create_table unless table_exists?
+end
+
+class CardStock < Sequel::Model
+  set_schema {
+    primary_key :id
+    String :name
+    Int :stock, :default => 10
+    Int :price, :default => 500
+  }
+  create_table unless table_exists?
+
+  def card
+    Card.new(:name => name)
+  end
 end
 
 # -- core ---------------------
@@ -691,6 +732,12 @@ def create_npc(n)
   end
 end
 
+def card_shop
+  Card::Values.keys.each do |name|
+    CardStock.find_or_create(:name => name)
+  end
+end
+
 # -- debug ---------------------
 def debug_dump_leagues
   #puts OpenedLeague.map(&:dump_string)
@@ -739,6 +786,7 @@ def run_core
     decrease_life
     close_leagues
     debug_puts_new_card if $PP_Debug
+    card_shop
     GameEnvironment.update('game_time = game_time + 1')
     GameEnvironment.filter('game_time >= 24').update('game_time = 0')
   }
