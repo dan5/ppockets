@@ -38,6 +38,8 @@ module PlayerCommand
     raise "run cmd error: #{$!}"
   end
 
+private
+
   def cmd_entry_league(league_id)
     assert entry?
     league = League.find(:id => league_id)
@@ -80,7 +82,7 @@ module PlayerCommand
     end
   end
 
-  def swap_cards(a, b)
+  def cmd_swap_cards(a, b)
     assert a < 0 || a >= Max_cards
     assert b < 0 || b >= Max_cards
     card_a = cards_dataset.first(:position => a)
@@ -93,7 +95,7 @@ module PlayerCommand
     }
   end
 
-  def buy_card(stock_id, pre_price)
+  def cmd_buy_card(stock_id, pre_price)
     stock = CardStock.find(:id => stock_id)
     raise unless stock.stock > 0
     raise unless pre_price == stock.price
@@ -105,16 +107,6 @@ module PlayerCommand
     stock.stock -= 1
     stock.save
     create_new_card
-  end
-
-  def order_cards
-    # @todo: updateを最小限に
-    cards.each.with_index {|card, i| card.update(:position => i) }
-  end
-
-  def create_new_card
-    name = Card.sample_name
-    NewCard.create(:player_id => id, :name => name)
   end
 end
 
@@ -222,6 +214,16 @@ class Player < Sequel::Model
     5.times do |i|
       Card.create(:player_id => self.id, :position => i)
     end
+  end
+
+  def order_cards
+    # @todo: updateを最小限に
+    cards.each.with_index {|card, i| card.update(:position => i) }
+  end
+
+  def create_new_card
+    name = Card.sample_name
+    NewCard.create(:player_id => id, :name => name)
   end
 
   def create_log(message)

@@ -144,13 +144,13 @@ get '/cmd/put_new_card/:id' do
 end
 
 get '/cmd/swap/:a/:b' do
-  @player.swap_cards params[:a].to_i, params[:b].to_i
+  @player.run_cmd :swap_cards, params[:a].to_i, params[:b].to_i
   session[:notice] = "swap cards(#{params[:a]}, #{params[:b]})"
   redirect '/'
 end
 
 get '/cmd/buy_card/:id/:pre_price' do
-  @player.buy_card params[:id], params[:pre_price].to_i
+  @player.run_cmd :buy_card, params[:id], params[:pre_price].to_i
   stock = CardStock.find(:id => params[:id])
   session[:cards_notice] = "#{stock.name}を買いました"
   redirect '/cards/stock'
