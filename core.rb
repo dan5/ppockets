@@ -735,9 +735,16 @@ def create_npc(n)
 end
 
 def card_shop
+  dump_method_name
   Card::Values.keys.each do |name|
     CardStock.find_or_create(:name => name)
   end
+  max = 10000
+  min = 10
+  CardStock.filter('stock <= 0 AND price < ?', max).update "price = round(price * 1.1)"
+  CardStock.filter('stock >= 1 AND price > ?', min).update "price = round(price * 0.95)"
+  CardStock.filter('price < ?', min).update(:price => min)
+  CardStock.filter('price > ?', max).update(:price => max)
 end
 
 # -- debug ---------------------
@@ -770,7 +777,7 @@ end
 def debug_puts_new_card
   Player.filter(:npc? => true).each do |player|
     if new_card = player.new_cards_dataset.first
-      player.cmd_put_new_card new_card.id
+      player.run_cmd :put_new_card, new_card.id
     end
   end
 end
