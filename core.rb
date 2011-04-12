@@ -49,18 +49,18 @@ private
     league.save
   end
 
-  def cmd_draw_new_card
+  def cmd_draw_new_character
     return if num_commands <= 0
     self.num_commands -= 1; save
-    create_new_card
+    create_new_character
   end
 
   def param_up(rate, str)
     return if num_commands <= 0
     self.num_commands -= 1; save
     ptn = {:position => -1}
-    Max_cards.times {|i| ptn |= {:position => i} if rand(100) < rate }
-    cards_dataset.filter(ptn).update(str)
+    Max_characters.times {|i| ptn |= {:position => i} if rand(100) < rate }
+    characters_dataset.filter(ptn).update(str)
   end
 
   def cmd_off_up
@@ -71,30 +71,30 @@ private
     param_up(50, 'def_plus = def_plus + 1')
   end
 
-  def cmd_put_new_card(new_card_id)
-    ralse unless new_card_ = new_cards_dataset.first(:id => new_card_id)
+  def cmd_put_new_character(new_character_id)
+    ralse unless new_character_ = new_characters_dataset.first(:id => new_character_id)
     # @todo: カードがmaxのときはそれを通知する必要がある
-    if cards_.count < Max_cards
-      Card.create(:player_id => self.id, :name => new_card_.name, :position => cards_.count)
-      new_card_.delete
+    if characters_.count < Max_characters
+      Character.create(:player_id => self.id, :name => new_character_.name, :position => characters_.count)
+      new_character_.delete
     end
   end
 
-  def cmd_swap_cards(a, b)
-    assert a < 0 || a >= Max_cards
-    assert b < 0 || b >= Max_cards
-    card_a = cards_dataset.first(:position => a)
-    card_b = cards_dataset.first(:position => b)
-    return unless card_a && card_b
+  def cmd_swap_characters(a, b)
+    assert a < 0 || a >= Max_characters
+    assert b < 0 || b >= Max_characters
+    character_a = characters_dataset.first(:position => a)
+    character_b = characters_dataset.first(:position => b)
+    return unless character_a && character_b
     DB.transaction {
-      card_a.update(:position => b)
-      card_b.update(:position => a)
-      order_cards
+      character_a.update(:position => b)
+      character_b.update(:position => a)
+      order_characters
     }
   end
 
-  def cmd_buy_card(stock_id, pre_price)
-    stock = CardStock.find(:id => stock_id) || raise()
+  def cmd_buy_character(stock_id, pre_price)
+    stock = CharacterStock.find(:id => stock_id) || raise()
     raise 'stockがありません' unless stock.stock > 0 # @todo: notice
     raise 'priceが変動しています' unless pre_price == stock.price # @todo: notice
     raise 'jewelが不足しています' unless jewel >= stock.price # @todo: notice
@@ -104,13 +104,29 @@ private
     stock.price = [10000, stock.price].min
     stock.stock -= 1
     stock.save
-    create_new_card(stock.name)
+    create_new_character(stock.name)
   end
 end
 
 # -- DB ---------------------
 require 'helper'
 Sequel::Model.plugin(:schema)
+
+class AmazonItem < Sequel::Model
+  names = %w(
+   asin
+   amount
+   author
+   smallimage/url
+   mediumimage/url
+   largeimage/url
+  )
+  set_schema {
+    primary_key :id
+    names.each {|e| String e.gsub('/', '_') }
+  }
+  create_table unless table_exists?
+end
 
 class GameEnvironment < Sequel::Model
   set_schema {
@@ -173,9 +189,9 @@ class Player < Sequel::Model
   include PlayerCommand
   many_to_one :user
   many_to_many :leagues
-  one_to_many :new_cards
-  one_to_many :cards, :order => :position
-  one_to_many :card_logs, :order => :position
+  one_to_many :new_characters
+  one_to_many :characters, :order => :position
+  one_to_many :character_logs, :order => :position
   one_to_many :home_games, :class => :Game, :key => :home_player_id
   one_to_many :away_games, :class => :Game, :key => :away_player_id
   one_to_many :results
@@ -203,24 +219,24 @@ class Player < Sequel::Model
   def next_games_() games_.filter(:played? => false) end
   def recent_games_() games_.filter(:played? => true).order(:id.desc) end
 
-  def cards_
-    cards_dataset
+  def characters_
+    characters_dataset
   end
 
   def after_create
     super
     5.times do |i|
-      Card.create(:player_id => self.id, :position => i)
+      Character.create(:player_id => self.id, :position => i)
     end
   end
 
-  def order_cards
+  def order_characters
     # @todo: updateを最小限に
-    cards.each.with_index {|card, i| card.update(:position => i) }
+    characters.each.with_index {|character, i| character.update(:position => i) }
   end
 
-  def create_new_card(name = Card.sample_name)
-    NewCard.create(:player_id => id, :name => name)
+  def create_new_character(name = Character.sample_name)
+    NewCharacter.create(:player_id => id, :name => name)
   end
 
   def create_log(message)
@@ -236,8 +252,8 @@ class Player < Sequel::Model
     #raise if entry? && league_id
     # @todo: only debug mode
     return unless id
-    assert cards_.count > Max_cards
-    cards.each.with_index {|card, i| assert card.position != i }
+    assert characters_.count > Max_characters
+    characters.each.with_index {|character, i| assert character.position != i }
   end
 end 
 
@@ -326,7 +342,7 @@ class Game < Sequel::Model
   many_to_one :league
   many_to_one :home_player, :class => :Player
   many_to_one :away_player, :class => :Player
-  one_to_many :card_logs
+  one_to_many :character_logs
   set_schema {
     primary_key :id
     foreign_key :league_id, :leagues
@@ -377,7 +393,7 @@ class Result < Sequel::Model
   create_table unless table_exists?
 end
 
-class NewCard < Sequel::Model
+class NewCharacter < Sequel::Model
   many_to_one :player
   set_schema {
     primary_key :id
@@ -387,7 +403,7 @@ class NewCard < Sequel::Model
   create_table unless table_exists?
 end
 
-class Card < Sequel::Model
+class Character < Sequel::Model
   many_to_one :player
   set_schema {
     primary_key :id
@@ -451,7 +467,7 @@ class Card < Sequel::Model
   }
 end 
 
-class CardLog < Sequel::Model
+class CharacterLog < Sequel::Model
   many_to_one :player
   many_to_one :game
   set_schema {
@@ -471,7 +487,7 @@ class CardLog < Sequel::Model
   create_table unless table_exists?
 end
 
-class DefaultCard < Hash
+class DefaultCharacter < Hash
   def initialize(opts = {})
     self.merge!(:name => 'ghost', :off => 0, :def => 0, :agi => 0, :life => 0, :job => :fig).merge!(opts)
   end
@@ -487,7 +503,7 @@ class Log < Sequel::Model
   create_table unless table_exists?
 end
 
-class CardStock < Sequel::Model
+class CharacterStock < Sequel::Model
   set_schema {
     primary_key :id
     String :name
@@ -496,8 +512,8 @@ class CardStock < Sequel::Model
   }
   create_table unless table_exists?
 
-  def card
-    Card.new(:name => name)
+  def character
+    Character.new(:name => name)
   end
 end
 
@@ -567,75 +583,75 @@ def update_leagues
   update_active_players active_leagues_.all.map(&:players).flatten
 end
 
-def create_card_logs(game, player, is_home)
+def create_character_logs(game, player, is_home)
   logs = []
-  cards = player.cards_dataset.limit(5).all
+  characters = player.characters_dataset.limit(5).all
   # @todo: rewrite...
-  cards.fill(cards.size...5) {|i| DefaultCard.new(:position => i) }.each do |card|
+  characters.fill(characters.size...5) {|i| DefaultCharacter.new(:position => i) }.each do |character|
     params = [:name, :position, :off, :def, :agi ,:life, :job
-             ].inject({}) {|hash, e| hash[e] = card[e] || card.__send__(e); hash }
+             ].inject({}) {|hash, e| hash[e] = character[e] || character.__send__(e); hash }
     params[:home?] = is_home
     params[:player_id] = player.id
     params[:game_id] = game.id
-    logs << CardLog.create(params)
+    logs << CharacterLog.create(params)
   end
   logs
 end
 
-def _play_game(mode, home_card, away_card)
+def _play_game(mode, home_character, away_character)
   if :comp_agi == mode
-    next_mode, log = mode, [:draw] if home_card.agi == away_card.agi
-    next_mode, log = :atack_home, [:win_home] if home_card.agi > away_card.agi
-    next_mode, log = :atack_away, [:win_away] if home_card.agi < away_card.agi
+    next_mode, log = mode, [:draw] if home_character.agi == away_character.agi
+    next_mode, log = :atack_home, [:win_home] if home_character.agi > away_character.agi
+    next_mode, log = :atack_away, [:win_away] if home_character.agi < away_character.agi
   else
-    off_card, def_card, next_mode = [home_card, away_card, :atack_away] if :atack_home == mode
-    off_card, def_card, next_mode = [away_card, home_card, :atack_home] if :atack_away == mode
-    if off_card.off == def_card.def
+    off_character, def_character, next_mode = [home_character, away_character, :atack_away] if :atack_home == mode
+    off_character, def_character, next_mode = [away_character, home_character, :atack_home] if :atack_away == mode
+    if off_character.off == def_character.def
       next_mode, log = :comp_agi, [0] # :draw
     else
-      score = off_card.off > def_card.def ? 2 : nil
+      score = off_character.off > def_character.def ? 2 : nil
       log = [score]
     end
   end
   [next_mode, log]
 end
 
-def play_game(home_cards, away_cards)
+def play_game(home_characters, away_characters)
   game_logs = []
   mode = :comp_agi
-  home_cards.zip(away_cards).each do |home_card, away_card|
+  home_characters.zip(away_characters).each do |home_character, away_character|
     last_mode = mode
-    mode, log = _play_game(mode, home_card, away_card)
+    mode, log = _play_game(mode, home_character, away_character)
     game_logs << [last_mode] + log
   end
   game_logs
 end
 
 def set_score(game, game_logs)
-  home_card_logs = game.card_logs_dataset.filter(:player_id => game.home_player.id)
-  away_card_logs = game.card_logs_dataset.filter(:player_id => game.away_player.id)
-  away_card_logs = game.card_logs_dataset.filter(:player_id => game.away_player.id)
-  assert home_card_logs.count != 5
-  assert away_card_logs.count != 5
+  home_character_logs = game.character_logs_dataset.filter(:player_id => game.home_player.id)
+  away_character_logs = game.character_logs_dataset.filter(:player_id => game.away_player.id)
+  away_character_logs = game.character_logs_dataset.filter(:player_id => game.away_player.id)
+  assert home_character_logs.count != 5
+  assert away_character_logs.count != 5
   game_logs.each.with_index do |log, i|
     mode, score = log
     if score # @trap: (score == 0) => :draw
-      home_card_logs.filter(:position => i).update(:score => score) if mode == :atack_home
-      away_card_logs.filter(:position => i).update(:score => score) if mode == :atack_away
+      home_character_logs.filter(:position => i).update(:score => score) if mode == :atack_home
+      away_character_logs.filter(:position => i).update(:score => score) if mode == :atack_away
     end
   end
-  game.home_score = home_card_logs.sum(:score) || 0
-  game.away_score = away_card_logs.sum(:score) || 0
+  game.home_score = home_character_logs.sum(:score) || 0
+  game.away_score = away_character_logs.sum(:score) || 0
 end
 
 def do_game(game)
-  assert game.card_logs_dataset.count != 0
-  home_cards = create_card_logs(game, game.home_player, true)
-  away_cards = create_card_logs(game, game.away_player, false)
-  assert home_cards.size != 5
-  assert away_cards.size != 5
+  assert game.character_logs_dataset.count != 0
+  home_characters = create_character_logs(game, game.home_player, true)
+  away_characters = create_character_logs(game, game.away_player, false)
+  assert home_characters.size != 5
+  assert away_characters.size != 5
   puts "#{game.home_player.name} vs #{game.away_player.name}"
-  game_logs = play_game(home_cards, away_cards)
+  game_logs = play_game(home_characters, away_characters)
   set_score(game, game_logs)
   puts "log: #{game.home_score}-#{game.away_score} #{game_logs.inspect}"
   game.update(:played? => true)
@@ -692,26 +708,26 @@ end
 def decrease_life
   dump_method_name
   active_opened_league.each do |l|
-    puts "=== deleted cards ====================="
+    puts "=== deleted characters ====================="
     games_ = l.games_dataset.filter(:turn_count => l.turn_count - 1)
     games_.each do |game|
       assert !game.played?
       [game.home_player, game.away_player].each do |player|
-        cards_ = player.cards_dataset.filter('position < 5')
-        p cards_.filter('life <= 1').map(:id)
-        cards_.filter('life <= 1').delete
-        cards_.update('life = life - 1')
-        player.order_cards
+        characters_ = player.characters_dataset.filter('position < 5')
+        p characters_.filter('life <= 1').map(:id)
+        characters_.filter('life <= 1').delete
+        characters_.update('life = life - 1')
+        player.order_characters
       end
     end
   end
 end
 
-def deliver_card(players)
+def deliver_character(players)
   dump_method_name
   players.each do |player|
-    player.new_cards_dataset.delete
-    player.create_new_card
+    player.new_characters_dataset.delete
+    player.create_new_character
   end
 end
 
@@ -720,7 +736,7 @@ def update_active_players(players)
   players.each do |player|
     player.update(:num_commands => 1)
   end
-  deliver_card players
+  deliver_character players
 end
 
 def create_npc(n)
@@ -731,17 +747,17 @@ def create_npc(n)
   end
 end
 
-def card_shop
+def character_shop
   dump_method_name
-  Card::Values.keys.each do |name|
-    CardStock.find_or_create(:name => name)
+  Character::Values.keys.each do |name|
+    CharacterStock.find_or_create(:name => name)
   end
   max = 10000
   min = 10
-  CardStock.filter('stock <= 0 AND price < ?', max).update 'price = round(price * 1.1)' # @todo
-  CardStock.filter('stock >= 1 AND price > ?', min).update 'price = round(price * 0.95)' # @todo
-  CardStock.filter('price < ?', min).update(:price => min)
-  CardStock.filter('price > ?', max).update(:price => max)
+  CharacterStock.filter('stock <= 0 AND price < ?', max).update 'price = round(price * 1.1)' # @todo
+  CharacterStock.filter('stock >= 1 AND price > ?', min).update 'price = round(price * 0.95)' # @todo
+  CharacterStock.filter('price < ?', min).update(:price => min)
+  CharacterStock.filter('price > ?', max).update(:price => max)
 end
 
 # -- debug ---------------------
@@ -771,10 +787,10 @@ def debug_entry_players
   end
 end
 
-def debug_puts_new_card
+def debug_puts_new_character
   Player.filter(:npc? => true).each do |player|
-    if new_card = player.new_cards_dataset.first
-      player.run_cmd :put_new_card, new_card.id
+    if new_character = player.new_characters_dataset.first
+      player.run_cmd :put_new_character, new_character.id
     end
   end
 end
@@ -791,8 +807,8 @@ def run_core
     update_leagues
     decrease_life
     close_leagues
-    debug_puts_new_card if $PP_Debug
-    card_shop
+    debug_puts_new_character if $PP_Debug
+    character_shop
     GameEnvironment.update('game_time = game_time + 1')
     GameEnvironment.filter('game_time >= 24').update('game_time = 0')
   }

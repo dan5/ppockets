@@ -1,0 +1,14 @@
+
+.amazon_show.c
+  %h2= link_to h(@item.get(:title)), @item.get(:detailpageurl)
+  .image
+    - img_url = @item.get('mediumimage/url')
+    - img = "<img src='#{img_url}'>"
+    = link_to img, "/amazon/#{h @item.get(:asin)}"
+  .l
+    %ul.spec
+      %li== asin: #{h @item.get(:asin)}
+      %li== 価格￥#{h @item.get(:amount)}
+      %li== auther: #{h @item.get_array(:author).join(' ')}
+      %li== publisher: #{h @item.get(:publisher) }
+  %hr

@@ -1,0 +1,43 @@
+%h2 Character Shop
+
+== 所持金: #{h @player.jewel} jewels
+
+- if @characters_notice
+  .notice&= @characters_notice
+.message
+  - if params[:prebuy]
+    - stock = CharacterStock.find(:id => params[:id])
+    %p
+      == #{h stock.name}を#{h stock.price}jで買いますか？
+      = link_to '買う', "/cmd/buy_character/#{stock.id}/#{stock.price}"
+  - else
+    %p いらっしゃいませ！
+
+%table.characters.border
+  %tr
+    %th name
+    %th agi
+    %th off
+    %th def
+    %th life
+    %th stock
+    %th price
+    %th
+    %th amazon
+    %th info
+  - CharacterStock.each do |stock|
+    - character = stock.character
+    %tr
+      %td.l!= character.name
+      %td.r!= character.agi_org
+      %td.r!= character.off_org
+      %td.r!= character.def_org
+      %td.r!= character.life_org
+      %td.r!= stock.stock
+      %td.r
+        - if stock.stock > 0 and @player.jewel >= stock.price
+          = link_to h(stock.price), "/characters/stock?id=#{h stock.id}&prebuy=true"
+        - else
+          &= stock.price
+      %td.space
+      %td.image{:class=>character.name}

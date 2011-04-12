@@ -9,8 +9,8 @@ Sinatra::Base.register SinatraMore::MarkupPlugin
 enable :sessions
 
 helpers do
-  def plus_param(card, meth)
-    param = card.__send__(meth)
+  def plus_param(character, meth)
+    param = character.__send__(meth)
     param == 0 ? '' : "+#{param}"
   end
 
@@ -78,11 +78,11 @@ get '/logs' do
   haml :logs
 end
 
-get '/new_card' do
-  if @player.new_cards.count == 0
+get '/new_character' do
+  if @player.new_characters.count == 0
     redirect '/'
   else
-    haml :new_card
+    haml :new_character
   end
 end
 
@@ -113,10 +113,29 @@ get '/games/:id' do
   haml :games_show
 end
 
-get '/cards/stock' do
-  @cards_notice = session[:cards_notice]
-  session[:cards_notice] = nil
-  haml :cards_stock
+get '/characters/stock' do
+  @characters_notice = session[:characters_notice]
+  session[:characters_notice] = nil
+  haml :characters_stock
+end
+
+get '/amazon/:asin' do
+  asin = params[:asin]
+  res = Amazon::Ecs.item_search(asin, :search_index => 'All', :response_group => 'Medium')
+  @item = res.items.first
+  haml :amazon_show
+end
+
+put '/amazon' do
+  @word = request[:word]
+  res = Amazon::Ecs.item_search(@word, :search_index => 'All', :response_group => 'Medium')
+  @items = res.items
+  haml :amazon
+end
+
+get '/amazon' do
+  @items = []
+  haml :amazon
 end
 
 get '/' do
@@ -124,10 +143,10 @@ get '/' do
 end
 
 # -- cmd API -----------
-get '/cmd/new_card' do
-  @player.run_cmd :draw_new_card
-  session[:notice] = 'created a new card.'
-  redirect '/new_card'
+get '/cmd/new_character' do
+  @player.run_cmd :draw_new_character
+  session[:notice] = 'created a new character.'
+  redirect '/new_character'
 end
 
 get '/cmd/off_up' do
@@ -142,23 +161,23 @@ get '/cmd/def_up' do
   redirect '/'
 end
 
-get '/cmd/put_new_card/:id' do
-  card = @player.run_cmd :put_new_card, params[:id]
-  session[:notice] = "#{card.name}をポケットに入れました"
+get '/cmd/put_new_character/:id' do
+  character = @player.run_cmd :put_new_character, params[:id]
+  session[:notice] = "#{character.name}をポケットに入れました"
   redirect '/'
 end
 
 get '/cmd/swap/:a/:b' do
-  @player.run_cmd :swap_cards, params[:a].to_i, params[:b].to_i
-  session[:notice] = "swap cards(#{params[:a]}, #{params[:b]})"
+  @player.run_cmd :swap_characters, params[:a].to_i, params[:b].to_i
+  session[:notice] = "swap characters(#{params[:a]}, #{params[:b]})"
   redirect '/'
 end
 
-get '/cmd/buy_card/:id/:pre_price' do
-  @player.run_cmd :buy_card, params[:id], params[:pre_price].to_i
-  stock = CardStock.find(:id => params[:id])
-  session[:cards_notice] = "#{stock.name}を買いました"
-  redirect '/cards/stock'
+get '/cmd/buy_character/:id/:pre_price' do
+  @player.run_cmd :buy_character, params[:id], params[:pre_price].to_i
+  stock = CharacterStock.find(:id => params[:id])
+  session[:characters_notice] = "#{stock.name}を買いました"
+  redirect '/characters/stock'
 end
 
 get '/dcmd/run_core' do
@@ -202,11 +221,11 @@ __END__
 - games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
 .message
   %ul
-    - if @player.new_cards.count > 0
+    - if @player.new_characters.count > 0
       %li
-        = link_to h("#{@player.new_cards.count}枚の new card があります"), '/new_card'
-%h2 CARDS
-%table.cards
+        = link_to h("#{@player.new_characters.count}枚の new character があります"), '/new_character'
+%h2 Characters
+%table.characters
   %tr
     %th idx
     %th name
@@ -215,29 +234,29 @@ __END__
     %th{:colspan=>2} def
     %th life
     %th{:colspan=>2} swap
-  - @player.cards_.each do |card|
-    - i = card.position
+  - @player.characters_.each do |character|
+    - i = character.position
     %tr
-      %td.c&= card.position + 1
-      %td&= card.name
-      %td.c.agi&= card.agi_org
-      %td.r&= card.off_org
-      %td.plus&= plus_param(card, :off_plus)
-      %td.r&= card.def_org
-      %td.plus&= plus_param(card, :def_plus)
-      %td.c&= card.life
+      %td.c&= character.position + 1
+      %td&= character.name
+      %td.c.agi&= character.agi_org
+      %td.r&= character.off_org
+      %td.plus&= plus_param(character, :off_plus)
+      %td.r&= character.def_org
+      %td.plus&= plus_param(character, :def_plus)
+      %td.c&= character.life
       %td
-        - unless card.position == @player.cards_.count - 1
+        - unless character.position == @player.characters_.count - 1
           = link_to 'V', "/cmd/swap/#{i}/#{i + 1}"
       %td
-        - unless card.position == 0
+        - unless character.position == 0
           = link_to 'A', "/cmd/swap/#{i - 1}/#{i}"
 %h2 COMMANS
 - if @player.num_commands > 0
   .memo memo: リーグにエントリしたとき、または試合を行ったあと、次のコマンドを実行できます
   %ul
     %li
-      = link_to 'NEW CARD', "/cmd/new_card"
+      = link_to 'NEW character', "/cmd/new_character"
       %span.memo&= '... 新しいカードを1枚引きます'
     %li
       = link_to 'OFF UP', "/cmd/off_up"
@@ -291,17 +310,17 @@ __END__
 = link_to 'ok', '/logs/delete_all'
 
 
-@@ new_card
-%h2 NEW CARD
-- new_card = @player.new_cards_dataset.first
-.new_card
-  &= new_card.name
+@@ new_character
+%h2 NEW character
+- new_character = @player.new_characters_dataset.first
+.new_character
+  &= new_character.name
 %img{:src=>"http://d.hatena.ne.jp/images/diary/k/ken106/2008-06-16.jpg"}
 <!-- %img{:src=>"http://image.blog.livedoor.jp/aoicafe/imgs/4/a/4a87eb92.jpg"} -->
 .commands
   %ul
-    - if @player.cards_.count < Max_cards
-      %li= link_to h('ポケットに入れる'), "./cmd/put_new_card/#{new_card.id}"
+    - if @player.characters_.count < Max_characters
+      %li= link_to h('ポケットに入れる'), "./cmd/put_new_character/#{new_character.id}"
     - else
       %li= h('ポケットに入れる')
     %li= link_to h('売る'), './'
@@ -334,12 +353,12 @@ __END__
 %h2 最近の試合
 %ul
   - @player.recent_games_.limit(5).all.reverse.each do |game|
-    - card_logs = game.card_logs_dataset.filter(:player_id => @player.id)
+    - character_logs = game.character_logs_dataset.filter(:player_id => @player.id)
     %li
       - str = "vs #{game.opponent(@player).name}"
       = link_to h(str), "/games/#{game.id}"
       &= '... 0 - 0'
-      &= card_logs.map {|e| "[#{e.name}]" }.join
+      &= character_logs.map {|e| "[#{e.name}]" }.join
 
 
 @@ players
@@ -421,7 +440,7 @@ __END__
         %span.menu= link_to 'HOME', "/"
         %span.menu= link_to 'LEAGUES', "/leagues"
         %span.menu= link_to 'PLAYERS', "/players"
-        %span.menu= link_to 'CARDS', "/cards/stock"
+        %span.menu= link_to 'CHARACTERS SHOP', "/characters/stock"
       %td
         - if @player
           = link_to 'Logout', "/logout"

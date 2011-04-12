@@ -1,0 +1,29 @@
+%form{:method => "POST", :action => '/amazon'}
+  %input{:type => "hidden", :name => "_method", :value => "PUT"}
+  %table
+    %tr
+      %td 
+        %input{:type => "text", :name => "word", :value => @word}
+      %td
+        %input{:type => "submit"}
+
+%table.border
+  %tr
+    %th 画像
+    %th ASIN
+    %th 価格
+    %th タイトル / その他情報
+  - @items.each do |e|
+    %tr
+      %td
+        - img_url = e.get('smallimage/url')
+        - img = "<img src='#{img_url}'>"
+        = link_to img, "/amazon/#{h e.get(:asin)}"
+      %td&= e.get(:asin)
+      %td.r== ￥#{h e.get(:amount)}
+      %td
+        = link_to h(e.get(:title)), e.get(:detailpageurl)
+        <br />
+        = e.get_array(:author).join(' ')
+        = ' / '
+        &= e.get(:publisher)
