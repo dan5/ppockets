@@ -21,4 +21,5 @@ Base_url = 'http://localhost:2333'
 #  :associate_tag => 'ppockets-22',
 #  :country => :jp
 #}
+$LOAD_PATH.unshift root_path
 load 'config/amazonconfig'
