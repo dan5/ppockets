@@ -119,10 +119,13 @@ get '/characters/stock' do
   haml :characters_stock
 end
 
+get '/characters/:id' do
+  haml :characters_show
+end
+
 get '/amazon/:asin' do
   asin = params[:asin]
-  res = Amazon::Ecs.item_search(asin, :search_index => 'All', :response_group => 'Medium')
-  @item = res.items.first
+  @item = AmazonItem.find_item(asin)
   haml :amazon_show
 end
 
@@ -441,6 +444,7 @@ __END__
         %span.menu= link_to 'LEAGUES', "/leagues"
         %span.menu= link_to 'PLAYERS', "/players"
         %span.menu= link_to 'CHARACTERS SHOP', "/characters/stock"
+        %span.menu= link_to 'AMAZON', "/amazon"
       %td
         - if @player
           = link_to 'Logout', "/logout"

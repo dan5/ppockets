@@ -1,21 +1,34 @@
+
+%style
+  ==<!--
+  - Character::Values.keys.each do |name|
+    - asin = Character.asin(name)
+    - if asin and !asin.empty?
+      - if item = AmazonItem.find_item(asin)
+        - img_url = item.smallimage_url
+        ==.#{name} { background-image: url("#{img_url}") }
+  ==-->
+
 %h2 Character Shop
 
-== 所持金: #{h @player.jewel} jewels
+- if @player
+  == 所持金: #{h @player.jewel} jewels
 
-- if @characters_notice
-  .notice&= @characters_notice
-.message
-  - if params[:prebuy]
-    - stock = CharacterStock.find(:id => params[:id])
-    %p
-      == #{h stock.name}を#{h stock.price}jで買いますか？
-      = link_to '買う', "/cmd/buy_character/#{stock.id}/#{stock.price}"
-  - else
-    %p いらっしゃいませ！
+  - if @characters_notice
+    .notice&= @characters_notice
+  .message
+    - if params[:prebuy]
+      - stock = CharacterStock.find(:id => params[:id])
+      %p
+        == #{h stock.name}を#{h stock.price}jで買いますか？
+        = link_to '買う', "/cmd/buy_character/#{stock.id}/#{stock.price}"
+    - else
+      %p いらっしゃいませ！
 
 %table.characters.border
   %tr
-    %th name
+    %th no
+    %th nick
     %th agi
     %th off
     %th def
@@ -25,9 +38,10 @@
     %th
     %th amazon
     %th info
-  - CharacterStock.each do |stock|
+  - CharacterStock.each_with_index do |stock, idx|
     - character = stock.character
     %tr
+      %td.r!= idx + 1
       %td.l!= character.name
       %td.r!= character.agi_org
       %td.r!= character.off_org
@@ -35,9 +49,22 @@
       %td.r!= character.life_org
       %td.r!= stock.stock
       %td.r
-        - if stock.stock > 0 and @player.jewel >= stock.price
+        - if stock.stock > 0 and @player and @player.jewel >= stock.price
           = link_to h(stock.price), "/characters/stock?id=#{h stock.id}&prebuy=true"
         - else
           &= stock.price
       %td.space
+        - asin = character.asin
+        - if asin and !asin.empty?
+          - if item = AmazonItem.find_item(asin)
+            - img_url = item.smallimage_url
+            - img = "<img src='#{img_url}'>"
+            - link_to img, "/amazon/#{h item.asin}"
       %td.image{:class=>character.name}
+      %td.l
+        - asin = character.asin
+        - if asin and !asin.empty?
+          - if item = AmazonItem.find_item(asin)
+            = link_to h(item.title), item.detailpageurl
+
+

@@ -15,7 +15,7 @@
     %th タイトル / その他情報
   - @items.each do |e|
     %tr
-      %td
+      %td.c
         - img_url = e.get('smallimage/url')
         - img = "<img src='#{img_url}'>"
         = link_to img, "/amazon/#{h e.get(:asin)}"

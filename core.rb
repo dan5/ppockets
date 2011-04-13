@@ -113,19 +113,31 @@ require 'helper'
 Sequel::Model.plugin(:schema)
 
 class AmazonItem < Sequel::Model
-  names = %w(
+  Attributes = %w(
    asin
+   title
    amount
    author
+   detailpageurl
+   publisher
    smallimage/url
    mediumimage/url
    largeimage/url
   )
   set_schema {
     primary_key :id
-    names.each {|e| String e.gsub('/', '_') }
+    Attributes.each {|e| String e.gsub('/', '_') }
   }
   create_table unless table_exists?
+
+  def self.find_item(asin)
+    unless item = self.find(:asin => asin)
+      res = Amazon::Ecs.item_search(asin, :search_index => 'All', :response_group => 'Medium')
+      attributes = Attributes.inject({}) {|r, e| r[e.gsub('/', '_')] = res.items.first.get(e); r }
+      item = self.create attributes
+    end
+    item
+  end
 end
 
 class GameEnvironment < Sequel::Model
@@ -425,6 +437,30 @@ class Character < Sequel::Model
   def off() off_org + off_plus end
   def def() def_org + def_plus end
   def job() :fig end
+
+  def asin() self.class.asin(name) end
+
+  def self.asin(name)
+    {
+      'keroro' => 'B0009XJZH2',
+      'tamama' => 'B0009YA552',
+      'giroro' => 'B0009XJZHC',
+      'dororo' => 'B0009XJZI6',
+      'kururu' => 'B000ARCKKG',
+
+      'garuru' => 'B001P4DFMK',
+      'taruru' => 'B000CR8PL2',
+      'tororo' => nil,
+      'zoruru' => nil,
+      'pururu' => 'B0024MN658',
+
+      'fuyuki' => 'B000FAO97A',
+      'momoka' => 'B004INFY4W',
+      'natsumi' => 'B000AFMEIQ',
+      'koyuki' => 'B000FAO97K',
+      'mutsumi' => nil,
+    }[name] or 'B000XT2D80'
+  end 
 
   def after_create
     super
