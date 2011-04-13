@@ -114,15 +114,15 @@ Sequel::Model.plugin(:schema)
 
 class AmazonItem < Sequel::Model
   Attributes = %w(
-   asin
-   title
-   amount
-   author
-   detailpageurl
-   publisher
-   smallimage/url
-   mediumimage/url
-   largeimage/url
+    asin
+    title
+    amount
+    author
+    detailpageurl
+    publisher
+    smallimage/url
+    mediumimage/url
+    largeimage/url
   )
   set_schema {
     primary_key :id
@@ -440,6 +440,9 @@ class Character < Sequel::Model
 
   def asin() self.class.asin(name) end
 
+  # @todo ---
+  #Default_asin = 'B000XT2D80'
+  Default_asin = 'B000XT2D80'
   def self.asin(name)
     {
       'keroro' => 'B0009XJZH2',
@@ -450,8 +453,8 @@ class Character < Sequel::Model
 
       'garuru' => 'B001P4DFMK',
       'taruru' => 'B000CR8PL2',
-      'tororo' => nil,
-      'zoruru' => nil,
+      'tororo' => 'B004UDU50S',
+      'zoruru' => 'B004UDHLKU',
       'pururu' => 'B0024MN658',
 
       'fuyuki' => 'B000FAO97A',
@@ -459,8 +462,12 @@ class Character < Sequel::Model
       'natsumi' => 'B000AFMEIQ',
       'koyuki' => 'B000FAO97K',
       'mutsumi' => nil,
-    }[name] or 'B000XT2D80'
+    }[name] || Default_asin
   end 
+
+  def amazon_item
+    AmazonItem.find_item(asin || Default_asin)
+  end
 
   def after_create
     super

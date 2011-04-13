@@ -1,12 +1,10 @@
-
 %style
   ==<!--
   - Character::Values.keys.each do |name|
     - asin = Character.asin(name)
-    - if asin and !asin.empty?
-      - if item = AmazonItem.find_item(asin)
-        - img_url = item.smallimage_url
-        ==.#{name} { background-image: url("#{img_url}") }
+    - item = AmazonItem.find_item(asin)
+    - img_url = item.smallimage_url
+    ==.#{name} { background-image: url("#{img_url}") }
   ==-->
 
 %h2 Character Shop
@@ -34,10 +32,8 @@
     %th def
     %th life
     %th stock
-    %th price
-    %th
-    %th amazon
-    %th info
+    %th jewel
+    %th{:colspan=>4} amazon.co.jp の関連商品
   - CharacterStock.each_with_index do |stock, idx|
     - character = stock.character
     %tr
@@ -53,18 +49,13 @@
           = link_to h(stock.price), "/characters/stock?id=#{h stock.id}&prebuy=true"
         - else
           &= stock.price
-      %td.space
-        - asin = character.asin
-        - if asin and !asin.empty?
-          - if item = AmazonItem.find_item(asin)
-            - img_url = item.smallimage_url
-            - img = "<img src='#{img_url}'>"
-            - link_to img, "/amazon/#{h item.asin}"
-      %td.image{:class=>character.name}
-      %td.l
-        - asin = character.asin
-        - if asin and !asin.empty?
-          - if item = AmazonItem.find_item(asin)
-            = link_to h(item.title), item.detailpageurl
-
-
+      %td.space{:width=>20}
+      %td
+      - item = character.amazon_item
+      %td.c.image{:class=>character.name}
+        - img = "<img src='/images/spacer.png' width='90' height='42'>"
+        = link_to img, "/amazon/#{h item.asin}"
+      %td.l.amazoninfo
+        &= item.title
+        %br
+        = link_to 'amazon.co.jp で詳細を見る', item.detailpageurl
