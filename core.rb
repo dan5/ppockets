@@ -413,6 +413,10 @@ class NewCharacter < Sequel::Model
     String :name
   }
   create_table unless table_exists?
+
+  def character
+    Character.new(:name => name)
+  end
 end
 
 class Character < Sequel::Model

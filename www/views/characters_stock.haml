@@ -1,11 +1,4 @@
-%style
-  ==<!--
-  - Character::Values.keys.each do |name|
-    - asin = Character.asin(name)
-    - item = AmazonItem.find_item(asin)
-    - img_url = item.smallimage_url
-    ==.#{name} { background-image: url("#{img_url}") }
-  ==-->
+= haml :_character_style
 
 %h2 Character Shop
 
@@ -18,8 +11,8 @@
     - if params[:prebuy]
       - stock = CharacterStock.find(:id => params[:id])
       %p
-        == #{h stock.name}を#{h stock.price}jで買いますか？
-        = link_to '買う', "/cmd/buy_character/#{stock.id}/#{stock.price}"
+        == #{h stock.name}を#{h stock.price}jでゲットしますか？
+        = link_to 'ゲットする', "/cmd/buy_character/#{stock.id}/#{stock.price}"
     - else
       %p いらっしゃいませ！
 
@@ -37,7 +30,7 @@
   - CharacterStock.each_with_index do |stock, idx|
     - character = stock.character
     %tr
-      %td.r!= idx + 1
+      %td.c!= idx + 1
       %td.l!= character.name
       %td.r!= character.agi_org
       %td.r!= character.off_org

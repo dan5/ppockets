@@ -1,0 +1,26 @@
+%h2 NEW CHARACTER
+- new_character = @player.new_characters_dataset.first
+.new_character
+  == 新しいカードは #{h(new_character.name)} でした。
+.commands
+  %ul
+    - if @player.characters_.count < Max_characters
+      %li= link_to h('ポケットに入れる'), "./cmd/put_new_character/#{new_character.id}"
+    - else
+      %li= h('ポケットに入れる')
+    %li= link_to h('手放す'), './'
+
+.amazon_show.c
+  %h2 amazon.co.jp の関連商品
+  %h2= link_to h(@item.title), @item.detailpageurl
+  .image
+    - img_url = @item.largeimage_url
+    - img = "<img src='#{img_url}'>"
+    = link_to img, "/amazon/#{h @item.asin}"
+  .l
+    %ul.spec
+      %li== asin: #{h @item.asin}
+      %li== 価格￥#{h @item.amount}
+      %li== auther: #{h @item.author}
+      %li== publisher: #{h @item.publisher}
+  %hr

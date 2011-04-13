@@ -82,6 +82,8 @@ get '/new_character' do
   if @player.new_characters.count == 0
     redirect '/'
   else
+    @new_character = @player.new_characters_dataset.first
+    @item = @new_character.character.amazon_item
     haml :new_character
   end
 end
@@ -220,113 +222,12 @@ __END__
       %td.r.b&= ((results_.sum(:point) or 0) / 1000.0).round / 10.0
 
 
-@@ home
-- games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
-.message
-  %ul
-    - if @player.new_characters.count > 0
-      %li
-        = link_to h("#{@player.new_characters.count}枚の new character があります"), '/new_character'
-%h2 Characters
-%table.characters
-  %tr
-    %th idx
-    %th name
-    %th agi
-    %th{:colspan=>2} off
-    %th{:colspan=>2} def
-    %th life
-    %th{:colspan=>2} swap
-  - @player.characters_.each do |character|
-    - i = character.position
-    %tr
-      %td.c&= character.position + 1
-      %td&= character.name
-      %td.c.agi&= character.agi_org
-      %td.r&= character.off_org
-      %td.plus&= plus_param(character, :off_plus)
-      %td.r&= character.def_org
-      %td.plus&= plus_param(character, :def_plus)
-      %td.c&= character.life
-      %td
-        - unless character.position == @player.characters_.count - 1
-          = link_to 'V', "/cmd/swap/#{i}/#{i + 1}"
-      %td
-        - unless character.position == 0
-          = link_to 'A', "/cmd/swap/#{i - 1}/#{i}"
-%h2 COMMANS
-- if @player.num_commands > 0
-  .memo memo: リーグにエントリしたとき、または試合を行ったあと、次のコマンドを実行できます
-  %ul
-    %li
-      = link_to 'NEW character', "/cmd/new_character"
-      %span.memo&= '... 新しいカードを1枚引きます'
-    %li
-      = link_to 'OFF UP', "/cmd/off_up"
-      %span.memo&= '... 攻撃強化を図ります。結果はランダムです'
-    %li
-      = link_to 'DEF UP', "/cmd/def_up"
-      %span.memo&= '... 攻撃強化を図ります。結果はランダムです'
-- else
-  .memo memo: コマンドは実行済みです
-%h2 STATUS
-%ul
-  %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
-  %li
-    - if league = @player.leagues_dataset.filter('status < 2').order(:id.desc).first
-      - str = "league#{league.id}"
-      = link_to h(str), "/leagues/#{league.id}"
-      に参加しています
-      %ul
-        - @player.games_.filter(:league_id => league.id).each do |game|
-          %li
-            &= "#{game.turn_count}試合目"
-            vs
-            = link_to_player game.opponent(@player)
-            - if game.played?
-              &= '... '
-              - if game.home_score == game.away_score
-                - res = 'draw'
-              - elsif game.home?(@player)
-                - res = game.home_score > game.away_score ? 'win' : 'lose'
-              - else
-                - res = game.home_score > game.away_score ? 'lose' : 'win'
-              = link_to h(res), "/games/#{game.id}"
-              &= game.home?(@player) ? game.home_score : game.away_score
-              &= '-'
-              &= game.home?(@player) ? game.away_score : game.home_score
-    - else
-      リーグには参加していません
-  %li
-    最近参加したリーグ
-    %ul
-      - @player.leagues_dataset.order(:id.desc).limit(3).each do | league|
-        %li
-          = link_to_league league
-
-
 @@ logs
 %h2 Logs
 .logs
   - @logs.each do |log|
     %p&= log.message
 = link_to 'ok', '/logs/delete_all'
-
-
-@@ new_character
-%h2 NEW character
-- new_character = @player.new_characters_dataset.first
-.new_character
-  &= new_character.name
-%img{:src=>"http://d.hatena.ne.jp/images/diary/k/ken106/2008-06-16.jpg"}
-<!-- %img{:src=>"http://image.blog.livedoor.jp/aoicafe/imgs/4/a/4a87eb92.jpg"} -->
-.commands
-  %ul
-    - if @player.characters_.count < Max_characters
-      %li= link_to h('ポケットに入れる'), "./cmd/put_new_character/#{new_character.id}"
-    - else
-      %li= h('ポケットに入れる')
-    %li= link_to h('売る'), './'
 
 
 @@ players_show
