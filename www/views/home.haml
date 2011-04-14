@@ -5,7 +5,7 @@
   %ul
     - if @player.new_characters.count > 0
       %li
-        = link_to h("#{@player.new_characters.count}枚の new character があります"), '/new_character'
+        = link_to h("#{@player.new_characters.count}枚の新しいカードがあります"), '/new_character'
 %h2 Characters
 %table.characters.border
   %tr
@@ -20,6 +20,11 @@
     %th{:colspan=>2} amazon.co.jp の関連商品
   - @player.characters_.each do |character|
     - i = character.position
+    - if i == 5
+      %tr
+        %td{:height=>10, :colspan=>20}
+          .memo memo: ここより上の5枚のカードが対戦に使われます。対戦に使ったlifeが1ポイント減少します
+
     %tr
       %td.c&= character.position + 1
       %td&= character.name
@@ -45,12 +50,12 @@
         %br
         = link_to 'amazon.co.jp で詳細を見る', item.detailpageurl
 
-%h2 COMMANS
+%h2 Commands
 - if @player.num_commands > 0
   .memo memo: リーグにエントリしたとき、または試合を行ったあと、次のコマンドを実行できます
   %ul
     %li
-      = link_to 'NEW character', "/cmd/new_character"
+      = link_to 'NEW CARD', "/cmd/new_character"
       %span.memo&= '... 新しいカードを1枚引きます'
     %li
       = link_to 'OFF UP', "/cmd/off_up"
@@ -60,7 +65,7 @@
       %span.memo&= '... 攻撃強化を図ります。結果はランダムです'
 - else
   .memo memo: コマンドは実行済みです
-%h2 STATUS
+%h2 Status
 %ul
   %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
   %li

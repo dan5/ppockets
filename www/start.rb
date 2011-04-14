@@ -344,7 +344,7 @@ __END__
         %span.menu= link_to 'HOME', "/"
         %span.menu= link_to 'LEAGUES', "/leagues"
         %span.menu= link_to 'PLAYERS', "/players"
-        %span.menu= link_to 'CHARACTERS SHOP', "/characters/stock"
+        %span.menu= link_to 'CARDS SHOP', "/characters/stock"
         %span.menu= link_to 'AMAZON', "/amazon"
       %td
         - if @player

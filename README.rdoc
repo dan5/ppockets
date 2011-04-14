@@ -57,4 +57,4 @@ DB = Sequel.sqlite(root_path + '/db/production.db')
 # -- game setting
 Max_players_in_league = 8
 Base_url = 'http://www3073u.sakura.ne.jp:2333'
-~
+

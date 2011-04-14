@@ -252,6 +252,7 @@ class Player < Sequel::Model
   end
 
   def create_log(message)
+    return if npc?
     log = Log.create(:player_id => id, :message => message)
     add_log log
   end
@@ -432,6 +433,7 @@ class Character < Sequel::Model
   }
   create_table unless table_exists?
 
+  def nick() name end # @todo
   def agi_org() default_value(name)[0] end
   def off_org() default_value(name)[1] end
   def def_org() default_value(name)[2] end
@@ -691,6 +693,16 @@ def set_score(game, game_logs)
   game.away_score = away_character_logs.sum(:score) || 0
 end
 
+def create_game_log(players, scores)
+  players[0].create_log "#{players[1].name}との対戦が行われました"
+  d = scores[0] - scores[1]
+  log = "#{scores[0]} - #{scores[1]}で"
+  log += if d > 0 then '勝ちました'
+         elsif d == 0 then '引き分けました'
+         else '負けました' end
+  players[0].create_log log
+end
+
 def do_game(game)
   assert game.character_logs_dataset.count != 0
   home_characters = create_character_logs(game, game.home_player, true)
@@ -702,9 +714,8 @@ def do_game(game)
   set_score(game, game_logs)
   puts "log: #{game.home_score}-#{game.away_score} #{game_logs.inspect}"
   game.update(:played? => true)
-  [game.home_player, game.away_player].each do |player|
-    player.create_log "試合が行われました"
-  end
+  create_game_log([game.home_player, game.away_player], [game.home_score, game.away_score])
+  create_game_log([game.away_player, game.home_player], [game.away_score, game.home_score])
 end
 
 def do_games
@@ -723,15 +734,19 @@ def _update_results(game)
     [game.away_player, game.away_score , game.away_score - game.home_score]
   ].each do |player, score, d|
     result = Result.find_or_create(:league_id => game.league.id, :player_id => player.id)
+    jewel = 0
     pt = 0
     case
     when d == 0 
+      jewel = 200
       pt = 1
       result.draw_count += 1
     when d > 0 
+      jewel = 300
       pt = 3
       result.win_count += 1
     when d < 0 
+      jewel = 100
       result.lose_count += 1
     end
     point = pt * 10000  + d * 100 + score
@@ -739,9 +754,11 @@ def _update_results(game)
     result.score += score
     result.winning_margin += d
     result.save
+    player.jewel += jewel
     player.point += point
     player.active_point += point
     player.save
+    player.create_log "賞金#{jewel}jewelを入手しました"
   end
 end
 
@@ -761,7 +778,9 @@ def decrease_life
       assert !game.played?
       [game.home_player, game.away_player].each do |player|
         characters_ = player.characters_dataset.filter('position < 5')
-        p characters_.filter('life <= 1').map(:id)
+        characters_.filter('life <= 1').each do |c|
+          c.player.create_log "#{c.nick}が消滅しました"
+        end
         characters_.filter('life <= 1').delete
         characters_.update('life = life - 1')
         player.order_characters
