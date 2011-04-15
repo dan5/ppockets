@@ -72,11 +72,11 @@ private
   end
 
   def cmd_put_new_character(new_character_id)
-    ralse unless new_character_ = new_characters_dataset.first(:id => new_character_id)
+    ralse unless new_character = new_characters_dataset.first(:id => new_character_id)
     # @todo: カードがmaxのときはそれを通知する必要がある
     if characters_.count < Max_characters
-      Character.create(:player_id => self.id, :name => new_character_.name, :position => characters_.count)
-      new_character_.delete
+      Character.create(:player_id => self.id, :name => new_character.name, :position => characters_.count)
+      new_character.delete
     end
   end
 
@@ -100,11 +100,27 @@ private
     raise 'jewelが不足しています' unless jewel >= stock.price # @todo: notice
     self.jewel -= stock.price
     self.save
+    new_character = create_new_character(stock.name)
+    if characters_.count < Max_characters
+      cmd_put_new_character(new_character.id)
+    end
     stock.price *= 1.2
     stock.price = [10000, stock.price].min
     stock.stock -= 1
     stock.save
-    create_new_character(stock.name)
+  end
+
+  def cmd_sell_new_character(new_character_id)
+    new_character = new_characters_dataset.first(:id => new_character_id) || raise()
+    stock = CharacterStock.find(:name => new_character.name) || raise()
+    self.jewel += stock.price
+    self.save
+    stock.price *= 0.9
+    stock.price = [10, stock.price].max
+    stock.stock += 1
+    stock.save
+    new_character.delete
+    new_character.name
   end
 end
 

@@ -122,6 +122,8 @@ get '/characters/stock' do
 end
 
 get '/characters/:id' do
+  @character = Character.find(:id => params[:id])
+  @item = @character.amazon_item
   haml :characters_show
 end
 
@@ -172,6 +174,12 @@ get '/cmd/put_new_character/:id' do
   redirect '/'
 end
 
+get '/cmd/sell_new_character/:id' do
+  name = @player.run_cmd :sell_new_character, params[:id]
+  session[:notice] = "#{name}を手放しました"
+  redirect '/'
+end
+
 get '/cmd/swap/:a/:b' do
   @player.run_cmd :swap_characters, params[:a].to_i, params[:b].to_i
   session[:notice] = "swap characters(#{params[:a]}, #{params[:b]})"
@@ -181,7 +189,7 @@ end
 get '/cmd/buy_character/:id/:pre_price' do
   @player.run_cmd :buy_character, params[:id], params[:pre_price].to_i
   stock = CharacterStock.find(:id => params[:id])
-  session[:characters_notice] = "#{stock.name}を買いました"
+  session[:characters_notice] = "#{stock.name}を入手しました"
   redirect '/characters/stock'
 end
 

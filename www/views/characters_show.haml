@@ -1,14 +1,16 @@
 
-.amazon_show.c
-  %h2= link_to h(@item.title), @item.detailpageurl
-  .image
-    - img_url = @item.mediumimage_url
-    - img = "<img src='#{img_url}'>"
-    = link_to img, "/amazon/#{h @item.asin}"
-  .l
-    %ul.spec
-      %li== asin: #{h @item.asin}
-      %li== 価格￥#{h @item.amount}
-      %li== auther: #{h @item.author}
-      %li== publisher: #{h @item.publisher}
-  %hr
+%h2&= @character.nick
+
+- if @player == @character.player
+  == Jewels: #{h @player.jewel}
+
+  - if @characters_notice
+    .notice&= @characters_notice
+  .message
+    %p
+      - price = 100
+      == #{h @character.nick}のカードを#{h price}jと引換に手放しますか？
+      = link_to '手放す', "/cmd/sell_character/#{@character.id}/#{price}"
+
+amazon.co.jpの関連商品
+= haml :amazon_show

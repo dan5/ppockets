@@ -3,7 +3,7 @@
 %h2 Character Shop
 
 - if @player
-  == 所持金: #{h @player.jewel} jewels
+  == Jewels: #{h @player.jewel}
 
   - if @characters_notice
     .notice&= @characters_notice
@@ -11,8 +11,8 @@
     - if params[:prebuy]
       - stock = CharacterStock.find(:id => params[:id])
       %p
-        == #{h stock.name}を#{h stock.price}jでゲットしますか？
-        = link_to 'ゲットする', "/cmd/buy_character/#{stock.id}/#{stock.price}"
+        == #{h stock.name}のカードを#{h stock.price}jと交換しますか？
+        = link_to '交換する', "/cmd/buy_character/#{stock.id}/#{stock.price}"
     - else
       %p いらっしゃいませ！
 
@@ -37,7 +37,7 @@
       %td.r!= character.def_org
       %td.r!= character.life_org
       %td.r!= stock.stock
-      %td.r
+      %td.r.b
         - if stock.stock > 0 and @player and @player.jewel >= stock.price
           = link_to h(stock.price), "/characters/stock?id=#{h stock.id}&prebuy=true"
         - else

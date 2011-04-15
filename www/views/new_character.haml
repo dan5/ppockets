@@ -8,7 +8,7 @@
       %li= link_to h('ポケットに入れる'), "./cmd/put_new_character/#{new_character.id}"
     - else
       %li= h('ポケットに入れる')
-    %li= link_to h('手放す'), './'
+    %li= link_to h('手放す'), "/cmd/sell_new_character/#{new_character.id}"
 
 .amazon_show.c
   %h2 amazon.co.jp の関連商品

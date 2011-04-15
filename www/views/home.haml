@@ -6,6 +6,11 @@
     - if @player.new_characters.count > 0
       %li
         = link_to h("#{@player.new_characters.count}枚の新しいカードがあります"), '/new_character'
+
+== Jewels: #{h @player.jewel} / 
+== 0勝 0敗 0分 /
+== time: #{game_env.game_time}
+
 %h2 Characters
 %table.characters.border
   %tr
@@ -27,7 +32,7 @@
 
     %tr
       %td.c&= character.position + 1
-      %td&= character.name
+      %td= link_to h(character.name), "/characters/#{character.id}"
       %td.c.agi&= character.agi_org
       %td.r&= character.off_org
       %td.plus&= plus_param(character, :off_plus)
