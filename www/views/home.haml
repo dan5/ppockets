@@ -1,18 +1,19 @@
 = haml :_character_style
-
 - games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
+
+.r
+  == Jewels: #{h @player.jewel} / 
+  == 0勝 0敗 0分 /
+  == time: #{game_env.game_time}
+
 .message
   %ul
     - if @player.new_characters.count > 0
       %li
         = link_to h("#{@player.new_characters.count}枚の新しいカードがあります"), '/new_character'
 
-== Jewels: #{h @player.jewel} / 
-== 0勝 0敗 0分 /
-== time: #{game_env.game_time}
-
 %h2 Characters
-%table.characters.border
+%table.characters
   %tr
     %th idx
     %th name

@@ -8,9 +8,8 @@
     .notice&= @characters_notice
   .message
     %p
-      - price = 100
-      == #{h @character.nick}のカードを#{h price}jと引換に手放しますか？
-      = link_to '手放す', "/cmd/sell_character/#{@character.id}/#{price}"
+      == #{h @character.nick}のカードを手放しますか？
+      = link_to '手放す', "/cmd/sell_character/#{@character.id}"
 
 amazon.co.jpの関連商品
 = haml :amazon_show

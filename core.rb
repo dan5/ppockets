@@ -110,17 +110,29 @@ private
     stock.save
   end
 
+  def cmd_sell_character(character_id)
+    character = characters_dataset.first(:id => character_id) || raise()
+    stock = CharacterStock.find(:name => character.name) || raise()
+    stock_price_down stock if character.life == character.life_org
+    character.delete_order
+    character.name
+  end
+
   def cmd_sell_new_character(new_character_id)
     new_character = new_characters_dataset.first(:id => new_character_id) || raise()
     stock = CharacterStock.find(:name => new_character.name) || raise()
+    stock_price_down stock
+    new_character.delete
+    new_character.name
+  end
+
+  def stock_price_down(stock)
     self.jewel += stock.price
     self.save
     stock.price *= 0.9
     stock.price = [10, stock.price].max
     stock.stock += 1
     stock.save
-    new_character.delete
-    new_character.name
   end
 end
 
@@ -471,7 +483,7 @@ class Character < Sequel::Model
       'tamama' => 'B0009YA552',
       'giroro' => 'B0009XJZHC',
       'dororo' => 'B0009XJZI6',
-      'kururu' => 'B000ARCKKG',
+      'kururu' => 'B0009WTAL4',
 
       'garuru' => 'B001P4DFMK',
       'taruru' => 'B000CR8PL2',
@@ -479,16 +491,21 @@ class Character < Sequel::Model
       'zoruru' => 'B004UDHLKU',
       'pururu' => 'B0024MN658',
 
-      'fuyuki' => 'B000FAO97A',
-      'momoka' => 'B004INFY4W',
-      'natsumi' => 'B000AFMEIQ',
-      'koyuki' => 'B000FAO97K',
-      'mutsumi' => nil,
+      'fuyuki' => 'B003V8A4FY',
+      'momoka' => 'B003V8A4FO',
+      'natsumi' => 'B0047737S4',
+      'koyuki' => 'B003V8A4GI',
+      'mutsumi' => 'B003V8A4EA',
     }[name] || Default_asin
   end 
 
   def amazon_item
     AmazonItem.find_item(asin || Default_asin)
+  end
+
+  def delete_order
+    delete
+    player.order_characters if player
   end
 
   def after_create

@@ -180,6 +180,12 @@ get '/cmd/sell_new_character/:id' do
   redirect '/'
 end
 
+get '/cmd/sell_character/:id' do
+  name = @player.run_cmd :sell_character, params[:id]
+  session[:notice] = "#{name}を手放しました"
+  redirect '/'
+end
+
 get '/cmd/swap/:a/:b' do
   @player.run_cmd :swap_characters, params[:a].to_i, params[:b].to_i
   session[:notice] = "swap characters(#{params[:a]}, #{params[:b]})"
@@ -346,28 +352,29 @@ __END__
   %head
     %link(rel='stylesheet' type='text/css' href='/stylesheet.css')
     %style
-  %table.menu{:width=>'100%'}
-    %tr
-      %td
-        %span.menu= link_to 'HOME', "/"
-        %span.menu= link_to 'LEAGUES', "/leagues"
-        %span.menu= link_to 'PLAYERS', "/players"
-        %span.menu= link_to 'CARDS SHOP', "/characters/stock"
-        %span.menu= link_to 'AMAZON', "/amazon"
-      %td
-        - if @player
-          = link_to 'Logout', "/logout"
-        - else
-          = link_to 'Login', "/login"
-  - if @debug_log
-    .debug_log&= @debug_log
-  - if @notice
-    .notice&= @notice
-  = yield
-  .footer
-    %hr
-    .debug
-      == time: #{h game_env.game_time}
-    .debug_commands
-      = link_to 'Run core', "/dcmd/run_core"
-    ppockets
+  %body
+    %table.menu{:width=>'100%'}
+      %tr
+        %td
+          %span.menu= link_to 'HOME', "/"
+          %span.menu= link_to 'LEAGUES', "/leagues"
+          %span.menu= link_to 'PLAYERS', "/players"
+          %span.menu= link_to 'CARDS SHOP', "/characters/stock"
+          %span.menu= link_to 'AMAZON', "/amazon"
+        %td.r
+          - if @player
+            = link_to 'Logout', "/logout"
+          - else
+            = link_to 'Login', "/login"
+    - if @debug_log
+      .debug_log&= @debug_log
+    - if @notice
+      .notice&= @notice
+    = yield
+    .footer
+      %hr
+      .debug
+        == time: #{h game_env.game_time}
+      .debug_commands
+        = link_to 'Run core', "/dcmd/run_core"
+      ppockets
