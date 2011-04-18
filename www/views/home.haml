@@ -17,9 +17,9 @@
   %tr
     %th idx
     %th name
-    %th agi
     %th{:colspan=>2} off
     %th{:colspan=>2} def
+    %th agi
     %th life
     %th{:colspan=>2} swap
     %th.space{:width=>10}
@@ -34,11 +34,11 @@
     %tr
       %td.c&= character.position + 1
       %td= link_to h(character.name), "/characters/#{character.id}"
-      %td.c.agi&= character.agi_org
       %td.r&= character.off_org
       %td.plus&= plus_param(character, :off_plus)
       %td.r&= character.def_org
       %td.plus&= plus_param(character, :def_plus)
+      %td.c.agi&= character.agi_org
       %td.c&= character.life
       %td
         - unless character.position == @player.characters_.count - 1

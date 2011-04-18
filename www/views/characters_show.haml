@@ -5,7 +5,7 @@
 
 - if @player == @character.player
   %table
-    - %w(agi off def life).each do |e|
+    - %w(off def agi life).each do |e|
       %tr
         %td&= e
         - if e == 'off' or e == 'def'

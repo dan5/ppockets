@@ -466,14 +466,14 @@ class Character < Sequel::Model
   create_table unless table_exists?
 
   def nick() name end # @todo
-  def agi_org() default_value(name)[0] end
-  def off_org() default_value(name)[1] end
-  def def_org() default_value(name)[2] end
+  def off_org() default_value(name)[0] end
+  def def_org() default_value(name)[1] end
+  def agi_org() default_value(name)[2] end
   def life_org() default_value(name)[3] end
 
-  def agi() agi_org end
   def off() off_org + off_plus end
   def def() def_org + def_plus end
+  def agi() agi_org end
   def job() :fig end
 
   def asin() self.class.asin(name) end
@@ -532,24 +532,24 @@ class Character < Sequel::Model
   end
 
   Values = {
-    # name       ag of df li
-    'keroro' => [ 3, 3, 2, 9],
-    'tamama' => [ 3, 4, 2, 7],
-    'giroro' => [ 5, 6, 6, 6],
-    'dororo' => [ 6, 3, 5, 6],
-    'kururu' => [ 3, 2, 6, 5],
-
+    # name       of df ag li
+    'keroro' => [ 3, 2, 3, 9],
+    'tamama' => [ 4, 2, 3, 7],
+    'giroro' => [ 6, 6, 5, 6],
+    'dororo' => [ 3, 5, 6, 6],
+    'kururu' => [ 2, 6, 3, 5],
+                          
     'garuru' => [ 7, 7, 7, 3],
-    'taruru' => [ 2, 2, 3, 5],
-    'tororo' => [ 4, 3, 7, 3],
-    'zoruru' => [ 1, 5, 5, 2],
-    'pururu' => [ 2, 2, 4, 5],
-
-    'fuyuki' => [ 3, 2, 1, 3],
-    'momoka' => [ 3, 1, 1, 2],
-    'natsumi' => [ 4, 6, 4, 5],
-    'koyuki' => [ 7, 3, 6, 5],
-    'mutsumi' => [ 5, 6, 6, 3],
+    'taruru' => [ 2, 3, 2, 5],
+    'tororo' => [ 3, 7, 4, 3],
+    'zoruru' => [ 5, 5, 1, 2],
+    'pururu' => [ 2, 4, 2, 5],
+                          
+    'fuyuki' => [ 2, 1, 3, 3],
+    'momoka' => [ 1, 1, 3, 2],
+    'natsumi'=> [ 6, 4, 4, 5],
+    'koyuki' => [ 3, 6, 7, 5],
+    'mutsumi'=> [ 6, 6, 5, 3],
   }
 end 
 
