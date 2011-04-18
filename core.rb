@@ -571,6 +571,8 @@ class CharacterLog < Sequel::Model
     String :job
   }
   create_table unless table_exists?
+
+  def ghost?() name == 'ghost' end
 end
 
 class DefaultCharacter < Hash

@@ -34,7 +34,7 @@
     %th 対戦相手
     %th スコア
     %th 勝敗
-    %th リーグ
+    %th{:colspan=>2} リーグ
     %th
     %th{:colspan=>5} amazon.co.jp の関連商品
   - @player.recent_games_.limit(5).all.reverse.each do |game|
@@ -53,7 +53,8 @@
         = link_to h("#{h own} - #{h opp}"), "/games/#{game.id}"
       %td
         &= own > opp ? 'win' : (own < opp ? 'lose' : 'draw')
-      %td= link_to h("#{game.league.name}-#{game.turn_count}"), "/leagues/#{game.league.id}"
+      %td= link_to h(game.league.name), "/leagues/#{game.league.id}"
+      %td== #{h game.turn_count}試合目
       %td{:width => 40}
       - character_logs.each do |e|
         %td.border.c.small_image{:class=>e.name}
@@ -62,8 +63,9 @@
           .popup
             %a{:href => "/amazon/#{h item.asin}"}
               <img src='/images/spacer.png'>
-              .card_params
-                &= "#{e.name} #{e.off}/#{e.def}/#{e.agi}/#{e.life}"
+              - unless e.ghost?
+                .card_params
+                  &= "#{e.name} #{e.off}/#{e.def}/#{e.agi}/#{e.life}"
 
 
 

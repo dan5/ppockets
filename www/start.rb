@@ -135,7 +135,7 @@ end
 
 put '/amazon' do
   @word = request[:word]
-  res = Amazon::Ecs.item_search(@word, :search_index => 'All', :response_group => 'Medium')
+  res = Amazon::Ecs.item_search(@word, :limit => 5, :search_index => 'All', :response_group => 'Medium')
   @items = res.items
   haml :amazon
 end
