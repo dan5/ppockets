@@ -1,7 +1,5 @@
 = haml :_character_style
 
-.notice== @#{@player.name}が編集したニックネームとamazon関連商品を表示しています。
-
 %h2 Character Shop
 
 - if @player
@@ -48,8 +46,7 @@
       %td
       - item = character.amazon_item
       %td.c.image{:class=>character.name}
-        - img = "<img src='/images/spacer.png' width='90' height='42'>"
-        = link_to img, "/amazon/#{h item.asin}"
+        = link_to "<img src='/images/spacer.png'>", "/amazon/#{h item.asin}"
       %td.l.amazoninfo
         &= item.title
         %br

@@ -316,6 +316,10 @@ class League < Sequel::Model
   }
   create_table unless table_exists?
 
+  def name
+    "league#{id}"
+  end
+
   def validate
     assert schedule_type.nil?
   end

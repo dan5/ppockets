@@ -1,4 +1,9 @@
 
+.notice== @player.nameが編集した商品を情報を表示しています。
+
+%p
+  todo: ここに商品の説明を表示する。
+
 .amazon_show.c
   %h2= link_to h(@item.title), @item.detailpageurl
   .image
@@ -12,3 +17,6 @@
       %li== auther: #{h @item.author}
       %li== publisher: #{h @item.publisher}
   %hr
+
+%p
+  todo: amazon.co.jpの関連商品

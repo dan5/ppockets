@@ -244,41 +244,6 @@ __END__
 = link_to 'ok', '/logs/delete_all'
 
 
-@@ players_show
-%h2&= @player.name
-%ul
-  %li
-    grade:
-    &= @player.grade
-  %li
-    wins:
-    &= @player.results_dataset.sum(:win_count)
-  %li
-    loses:
-    &= @player.results_dataset.sum(:lose_count)
-  %li
-    draws:
-    &= @player.results_dataset.sum(:draw_count)
-  %li
-    points:
-    &= @player.point
-%h2 今後の試合
-%ul
-  - @player.next_games_.each do |game|
-    %li
-      - str = "vs #{game.opponent(@player).name}"
-      = link_to h(str), "/games/#{game.id}"
-%h2 最近の試合
-%ul
-  - @player.recent_games_.limit(5).all.reverse.each do |game|
-    - character_logs = game.character_logs_dataset.filter(:player_id => @player.id)
-    %li
-      - str = "vs #{game.opponent(@player).name}"
-      = link_to h(str), "/games/#{game.id}"
-      &= '... 0 - 0'
-      &= character_logs.map {|e| "[#{e.name}]" }.join
-
-
 @@ players
 %h2 players
 = haml :_player_ranking

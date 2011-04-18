@@ -1,0 +1,70 @@
+= haml :_character_style
+- games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
+
+%h2&= @player.name
+%ul
+  %li
+    grade:
+    &= @player.grade
+  %li
+    wins:
+    &= @player.results_dataset.sum(:win_count)
+  %li
+    loses:
+    &= @player.results_dataset.sum(:lose_count)
+  %li
+    draws:
+    &= @player.results_dataset.sum(:draw_count)
+  %li
+    points:
+    &= @player.point
+%h2 今後の試合
+- if league = @player.leagues_dataset.filter('status < 2').order(:id.desc).first
+  = link_to h(league.name), "/leagues/#{league.id}"
+  に参加しています。
+%ul
+  - @player.next_games_.each do |game|
+    %li
+      - opp_player = game.opponent(@player)
+      vs
+      = link_to h(opp_player.name), "/players/#{opp_player.id}"
+%h2 最近の試合
+%table.characters
+  %tr
+    %th 対戦相手
+    %th スコア
+    %th 勝敗
+    %th リーグ
+    %th
+    %th{:colspan=>5} amazon.co.jp の関連商品
+  - @player.recent_games_.limit(5).all.reverse.each do |game|
+    - character_logs = game.character_logs_dataset.filter(:player_id => @player.id)
+    %tr
+      %td
+        - opp_player = game.opponent(@player)
+        vs
+        = link_to h(opp_player.name), "/players/#{opp_player.id}"
+
+      - if game.home_player == @player
+        - own, opp = game.home_score, game.away_score
+      - else
+        - own, opp = game.away_score, game.home_score
+      %td.c
+        = link_to h("#{h own} - #{h opp}"), "/games/#{game.id}"
+      %td
+        &= own > opp ? 'win' : (own < opp ? 'lose' : 'draw')
+      %td= link_to h("#{game.league.name}-#{game.turn_count}"), "/leagues/#{game.league.id}"
+      %td{:width => 40}
+      - character_logs.each do |e|
+        %td.border.c.small_image{:class=>e.name}
+          - asin = Character.asin(e.name)
+          - item = AmazonItem.find_item(asin)
+          .popup
+            %a{:href => "/amazon/#{h item.asin}"}
+              <img src='/images/spacer.png'>
+              .card_params
+                &= "#{e.name} #{e.agi}/#{e.off}/#{e.def}/#{e.life}"
+
+
+
+

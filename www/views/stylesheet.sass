@@ -10,12 +10,25 @@ body
       padding: 0 0
 
 table.characters
-  td.image
+  td.image, td.small_image
+    padding: 0px 0px
     background-repeat: no-repeat
     background-position: center
+    border: solid 1px #4cf
+    img
+      border: none
+  td.image
     height: 48
     width: 80
-    border: solid 1px #4cf
+    img
+      height: 48
+      width: 80
+  td.small_image
+    height: 32
+    width: 48
+    img
+      height: 32
+      width: 48
   td
     padding: 0px 4px
     border-top: solid 1px #ccc
@@ -86,3 +99,17 @@ a
 td.amazoninfo
   color: #444
   font-size: 75%
+
+.popup .card_params
+  margin-top: -10
+  margin-left: 25
+  padding: 2 4
+  background-color: #ffc
+  border: solid 1px #ca8
+  position: absolute
+  display: none
+
+.popup a:hover .card_params
+  color: #000
+  display: block
+

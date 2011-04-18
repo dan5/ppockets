@@ -49,8 +49,7 @@
       %td
       - item = character.amazon_item
       %td.c.image{:class=>character.name}
-        - img = "<img src='/images/spacer.png' width='90' height='42'>"
-        = link_to img, "/amazon/#{h item.asin}"
+        = link_to "<img src='/images/spacer.png'>", "/amazon/#{h item.asin}"
       %td.l.amazoninfo
         &= item.title
         %br
@@ -76,8 +75,7 @@
   %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
   %li
     - if league = @player.leagues_dataset.filter('status < 2').order(:id.desc).first
-      - str = "league#{league.id}"
-      = link_to h(str), "/leagues/#{league.id}"
+      = link_to h(league.name), "/leagues/#{league.id}"
       に参加しています
       %ul
         - @player.games_.filter(:league_id => league.id).each do |game|
