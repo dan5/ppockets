@@ -8,7 +8,10 @@
       %li= link_to h('ポケットに入れる'), "./cmd/put_new_character/#{new_character.id}"
     - else
       %li= h('ポケットに入れる')
-    %li= link_to h('手放す'), "/cmd/sell_new_character/#{new_character.id}"
+    %li
+      = link_to h('カードショップに売る'), "/cmd/sell_new_character/#{new_character.id}"
+      - stock = CharacterStock.find(:name => new_character.name)
+      == (参考価格: #{h stock.price}J)
 
 .amazon_show.c
   %h2 amazon.co.jp の関連商品

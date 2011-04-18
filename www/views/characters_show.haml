@@ -1,15 +1,35 @@
+- if @player == @character.player
+  .r== Jewels: #{h @player.jewel}
 
-%h2&= @character.nick
+%h2== #{h @character.nick}のカード
 
 - if @player == @character.player
-  == Jewels: #{h @player.jewel}
+  %table
+    - %w(agi off def life).each do |e|
+      %tr
+        %td&= e
+        - if e == 'off' or e == 'def'
+          %td.r&= @character.send(e + '_org')
+          - if (plus = @character.send(e + '_plus')) > 0
+            %td.r
+              +
+              &= plus
+        - else
+          %td.r&= @character.send(e)
 
   - if @characters_notice
     .notice&= @characters_notice
   .message
     %p
-      == #{h @character.nick}のカードを手放しますか？
-      = link_to '手放す', "/cmd/sell_character/#{@character.id}"
+      - if @character.life == @character.life_org
+        = link_to h('カードショップに売る'), "/cmd/sell_character/#{@character.id}"
+        - stock = CharacterStock.find(:name => @character.name)
+        == (参考価格: #{h stock.price}J)
+      - else
+        == #{h @character.nick}のカードを捨てますか？
+        = link_to '捨てる', "/cmd/sell_character/#{@character.id}"
+        %span.memo memo: lifeが減るとカードショップに売れなくなります
 
-amazon.co.jpの関連商品
+%hr
+%h2.c amazon.co.jpの関連商品
 = haml :amazon_show
