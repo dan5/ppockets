@@ -19,7 +19,7 @@ helpers do
   def path_info() @env['PATH_INFO'] end
 
   def redirect_logs
-    return if path_info[/^\/logs/]
+    return if path_info[/^\/logs/] or path_info[/\.css\z/]
     return if @player.nil? || @player.logs_dataset.count == 0
     redirect '/logs'
   end
@@ -31,10 +31,10 @@ before do
     @player = Player.find_or_create(:user_id => user.id)
   end
   redirect_logs
-  @debug_log = session[:debug_log]
-  @notice = session[:notice]
-  session[:debug_log] = nil
-  session[:notice] = nil
+  @debug_logs = session[:debug_logs] || []
+  @notices = session[:notices] || []
+  session[:debug_logs] = []
+  session[:notices] = []
 end
 
 error do
@@ -50,7 +50,7 @@ end
 get '/login/:login_password' do
   session[:login_password] = params[:login_password]
   if user = User.find(:login_password => session[:login_password])
-    session[:notice] = "#{user.name}さん、ようこそ！"
+    session[:notices] << "#{user.name}さん、ようこそ！"
     redirect '/'
   else
     'Log in failure'
@@ -63,13 +63,13 @@ end
 
 get '/logout' do
   session[:login_password] = nil
-  session[:notice] = "logout."
+  session[:notices] << "logout."
   redirect '/'
 end
 
 get '/logs/delete_all' do
   @player.delete_logs
-  session[:debug_log] = 'clear logs.'
+  session[:debug_logs] << 'clear logs.'
   redirect '/'
 end
 
@@ -103,7 +103,7 @@ end
 
 get '/leagues/:id/entry' do
   @player.run_cmd :entry_league, params[:id]
-  session[:notice] = "リーグ#{params[:id]}にエントリしました"
+  session[:notices] << "リーグ#{params[:id]}にエントリしました"
   redirect '/'
 end
 
@@ -116,8 +116,8 @@ get '/games/:id' do
 end
 
 get '/characters/stock' do
-  @characters_notice = session[:characters_notice]
-  session[:characters_notice] = nil
+  @characters_notice = session[:characters_notice] || []
+  session[:characters_notice] = []
   haml :characters_stock
 end
 
@@ -152,57 +152,57 @@ end
 # -- cmd API -----------
 get '/cmd/new_character' do
   @player.run_cmd :draw_new_character
-  session[:notice] = 'created a new character.'
+  session[:notices] << 'created a new character.'
   redirect '/new_character'
 end
 
 get '/cmd/off_up' do
   @player.run_cmd :off_up
-  session[:notice] = '攻撃強化コマンドを実行しました'
+  session[:notices] << '攻撃強化コマンドを実行しました'
   redirect '/'
 end
 
 get '/cmd/def_up' do
   @player.run_cmd :def_up
-  session[:notice] = 'ディフェンス強化コマンドを実行しました'
+  session[:notices] << 'ディフェンス強化コマンドを実行しました'
   redirect '/'
 end
 
 get '/cmd/put_new_character/:id' do
   character = @player.run_cmd :put_new_character, params[:id]
-  session[:notice] = "#{character.name}をポケットに入れました"
+  session[:notices] << "#{character.name}をポケットに入れました"
   redirect '/'
 end
 
 get '/cmd/sell_new_character/:id' do
   name = @player.run_cmd :sell_new_character, params[:id]
-  session[:notice] = "#{name}を手放しました"
+  session[:notices] << "#{name}を手放しました"
   redirect '/'
 end
 
 get '/cmd/sell_character/:id' do
   name = @player.run_cmd :sell_character, params[:id]
-  session[:notice] = "#{name}を手放しました"
+  session[:notices] << "#{name}を手放しました"
   redirect '/'
 end
 
 get '/cmd/swap/:a/:b' do
   @player.run_cmd :swap_characters, params[:a].to_i, params[:b].to_i
-  session[:notice] = "swap characters(#{params[:a]}, #{params[:b]})"
+  session[:notices] << "swap characters(#{params[:a]}, #{params[:b]})"
   redirect '/'
 end
 
 get '/cmd/buy_character/:id/:pre_price' do
   @player.run_cmd :buy_character, params[:id], params[:pre_price].to_i
   stock = CharacterStock.find(:id => params[:id])
-  session[:characters_notice] = "#{stock.name}のカードを買いました"
+  session[:characters_notice] << "#{stock.name}のカードを買いました"
   redirect '/characters/stock'
 end
 
 get '/dcmd/run_core' do
   if @player.game_master?
     run_core 
-    session[:debug_log] = 'run core'
+    session[:debug_logs] << 'run core'
   end
   redirect '/'
 end
@@ -316,7 +316,6 @@ __END__
 %html
   %head
     %link(rel='stylesheet' type='text/css' href='/stylesheet.css')
-    %style
   %body
     .todo todo: 広告設置予定地
     %table.menu{:width=>'100%'}
@@ -333,10 +332,10 @@ __END__
           - else
             = link_to 'Login', "/login"
     .custam_notice== @player.nameが編集したニックネームとamazon関連商品を表示しています。
-    - if @debug_log
-      .debug_log&= @debug_log
-    - if @notice
-      .notice&= @notice
+    - @debug_logs.each do |e|
+      .debug_log&= e
+    - @notices.each do |e|
+      .notice&= e
     = yield
     .footer
       %hr

@@ -5,8 +5,10 @@
 - if @player
   == Jewels: #{h @player.jewel}
 
-  - if @characters_notice
-    .notice&= @characters_notice
+  - if @player.characters_.count >= Max_characters
+    - @characters_notice << "#{Max_characters}枚のカードを持っています"
+  - @characters_notice.each do |e|
+    .notice&= e
   .message
     - if params[:prebuy]
       - stock = CharacterStock.find(:id => params[:id])
