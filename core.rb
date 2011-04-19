@@ -140,6 +140,30 @@ end
 require 'helper'
 Sequel::Model.plugin(:schema)
 
+class Custam < Sequel::Model
+  many_to_one :user
+  one_to_many :custam_cards
+  set_schema {
+    primary_key :id
+    foreign_key :user_id, :users
+    String :name
+    String :uid
+  }
+  create_table unless table_exists?
+end
+
+class CustamCard < Sequel::Model
+  many_to_one :custam
+  set_schema {
+    primary_key :id
+    foreign_key :custam_id, :custams
+    String :name
+    String :nick
+    String :asin
+  }
+  create_table unless table_exists?
+end
+
 class AmazonItem < Sequel::Model
   Attributes = %w(
     asin
@@ -187,12 +211,17 @@ end
 class User < Sequel::Model
   one_to_one :player
   one_to_one :twitter_account
+  one_to_many :custams
   set_schema {
     primary_key :id
     String :name, :unique => true
     String :login_password, :unique => true
   }
   create_table unless table_exists?
+
+  def custam
+    custams.first
+  end
 
   def self.create_from_twitter(twitter_id, name, login_password = nil)
     raise "twitter_id:#{twitter_id} already exists. " if TwitterAccount.find(:id_of_twitter => twitter_id)
@@ -476,7 +505,9 @@ class Character < Sequel::Model
   def agi() agi_org end
   def job() :fig end
 
-  def asin() self.class.asin(name) end
+  def asin()
+    (player && custam = player.user.custam && custam.asin(name)) or self.class.asin(name)
+  end
 
   # @todo ---
   #Default_asin = 'B000XT2D80'
