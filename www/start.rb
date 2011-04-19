@@ -3,10 +3,16 @@ require 'sinatra'
 require 'sinatra/reloader' if development?
 require 'sinatra_more/markup_plugin'
 require 'haml'
-require 'core.rb'
 Sinatra::Base.register SinatraMore::MarkupPlugin
-
 enable :sessions
+
+configure :production do
+  require 'core.rb'
+end
+
+before do
+  load 'core.rb' if development?
+end
 
 helpers do
   def plus_param(character, meth)
