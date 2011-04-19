@@ -1,9 +1,9 @@
-.custam_notice== @player.nameが編集したニックネームとamazon関連商品を表示しています。
 %style
   ==<!--
+  == .custam_notice { display: block; }
   - Character::Values.keys.each do |name|
     - asin = Character.asin(name)
     - item = AmazonItem.find_item(asin)
     - img_url = item.smallimage_url
-    ==.#{name} { background-image: url("#{img_url}") }
+    ==.#{name} { background-image: url("#{img_url}"); }
   ==-->

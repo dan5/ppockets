@@ -11,6 +11,8 @@
     - if @player.new_characters.count > 0
       %li
         = link_to h("#{@player.new_characters.count}枚の新しいカードがあります"), '/new_character'
+    - if @player.num_commands > 0
+      %li== コマンドを#{h @player.num_commands}回実行できます
 
 %h2 Cards
 %table.characters

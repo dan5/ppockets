@@ -135,7 +135,7 @@ end
 
 put '/amazon' do
   @word = request[:word]
-  res = Amazon::Ecs.item_search(@word, :limit => 5, :search_index => 'All', :response_group => 'Medium')
+  res = Amazon::Ecs.item_search(@word, :search_index => 'All', :response_group => 'Medium')
   @items = res.items
   haml :amazon
 end
@@ -195,7 +195,7 @@ end
 get '/cmd/buy_character/:id/:pre_price' do
   @player.run_cmd :buy_character, params[:id], params[:pre_price].to_i
   stock = CharacterStock.find(:id => params[:id])
-  session[:characters_notice] = "#{stock.name}を入手しました"
+  session[:characters_notice] = "#{stock.name}のカードを買いました"
   redirect '/characters/stock'
 end
 
@@ -318,6 +318,7 @@ __END__
     %link(rel='stylesheet' type='text/css' href='/stylesheet.css')
     %style
   %body
+    .todo todo: 広告設置予定地
     %table.menu{:width=>'100%'}
       %tr
         %td
@@ -331,6 +332,7 @@ __END__
             = link_to 'Logout', "/logout"
           - else
             = link_to 'Login', "/login"
+    .custam_notice== @player.nameが編集したニックネームとamazon関連商品を表示しています。
     - if @debug_log
       .debug_log&= @debug_log
     - if @notice
