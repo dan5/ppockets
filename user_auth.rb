@@ -56,7 +56,7 @@ def msg(client, message)
 end
 
 data = read_or_create_data()
-# data[:followers_ids] = []
+data[:followers_ids] = [] if ARGV.delete('--force')
 client = OAuthRubytter.new(data[:access_token])
 
 new_followeres_ids(data, client).each do |id|

@@ -150,6 +150,12 @@ class Custam < Sequel::Model
     String :uid
   }
   create_table unless table_exists?
+
+  def find_card(name)
+    #custam_cards_dataset.find(:name => name)
+    card = CustamCard.find(:custam_id => id, :name => name)
+    card or CustamCard.new(:nick => name, :asin => 'B00158V3IE')
+  end
 end
 
 class CustamCard < Sequel::Model
@@ -494,7 +500,6 @@ class Character < Sequel::Model
   }
   create_table unless table_exists?
 
-  def nick() name end # @todo
   def off_org() default_value(name)[0] end
   def def_org() default_value(name)[1] end
   def agi_org() default_value(name)[2] end
@@ -505,37 +510,15 @@ class Character < Sequel::Model
   def agi() agi_org end
   def job() :fig end
 
-  def asin()
-    (player && custam = player.user.custam && custam.asin(name)) or self.class.asin(name)
-  end
-
-  # @todo ---
-  #Default_asin = 'B000XT2D80'
-  Default_asin = 'B000XT2D80'
-  def self.asin(name)
-    {
-      'keroro' => 'B0009XJZH2',
-      'tamama' => 'B0009YA552',
-      'giroro' => 'B0009XJZHC',
-      'dororo' => 'B0009XJZI6',
-      'kururu' => 'B0009WTAL4',
-
-      'garuru' => 'B001P4DFMK',
-      'taruru' => 'B000CR8PL2',
-      'tororo' => 'B004UDU50S',
-      'zoruru' => 'B004UDHLKU',
-      'pururu' => 'B0024MN658',
-
-      'fuyuki' => 'B003V8A4FY',
-      'momoka' => 'B003V8A4FO',
-      'natsumi' => 'B0047737S4',
-      'koyuki' => 'B003V8A4GI',
-      'mutsumi' => 'B003V8A4EA',
-    }[name] || Default_asin
-  end 
+  def nick() custam.find_card(name).nick end
+  def asin() custam.find_card(name).asin end
 
   def amazon_item
-    AmazonItem.find_item(asin || Default_asin)
+    AmazonItem.find_item(asin)
+  end
+
+  def custam
+    (player and player.user.custam) || Custam.first
   end
 
   def delete_order
@@ -564,23 +547,23 @@ class Character < Sequel::Model
 
   Values = {
     # name       of df ag li
-    'keroro' => [ 3, 2, 3, 9],
-    'tamama' => [ 4, 2, 3, 7],
-    'giroro' => [ 6, 6, 5, 6],
-    'dororo' => [ 3, 5, 6, 6],
-    'kururu' => [ 2, 6, 3, 5],
+    'card01' => [ 3, 2, 3, 9],
+    'card02' => [ 4, 2, 3, 7],
+    'card03' => [ 6, 6, 5, 6],
+    'card04' => [ 3, 5, 6, 6],
+    'card05' => [ 2, 6, 3, 5],
                           
-    'garuru' => [ 7, 7, 7, 3],
-    'taruru' => [ 2, 3, 2, 5],
-    'tororo' => [ 3, 7, 4, 3],
-    'zoruru' => [ 5, 5, 1, 2],
-    'pururu' => [ 2, 4, 2, 5],
+    'card06' => [ 7, 7, 7, 3],
+    'card07' => [ 2, 3, 2, 5],
+    'card08' => [ 3, 7, 4, 3],
+    'card09' => [ 5, 5, 1, 2],
+    'card10' => [ 2, 4, 2, 5],
                           
-    'fuyuki' => [ 2, 1, 3, 3],
-    'momoka' => [ 1, 1, 3, 2],
-    'natsumi'=> [ 6, 4, 4, 5],
-    'koyuki' => [ 3, 6, 7, 5],
-    'mutsumi'=> [ 6, 6, 5, 3],
+    'card11' => [ 2, 1, 3, 3],
+    'card12' => [ 1, 1, 3, 2],
+    'card13' => [ 6, 4, 4, 5],
+    'card14' => [ 3, 6, 7, 5],
+    'card15' => [ 6, 6, 5, 3],
   }
 end 
 
@@ -631,8 +614,9 @@ class CharacterStock < Sequel::Model
   }
   create_table unless table_exists?
 
-  def character
-    Character.new(:name => name)
+  def character(opts = {})
+    opts[:name] = name
+    Character.new(opts)
   end
 end
 
@@ -896,6 +880,12 @@ def character_shop
   CharacterStock.filter('price > ?', max).update(:price => max)
 end
 
+def create_game_master(twitter_id, name)
+  user = User.create_from_twitter(twitter_id, name, name + '0000') # todo: use randam!!!
+  Player.find_or_create(:user_id => user.id, :game_master? => true)
+  user
+end
+
 # -- debug ---------------------
 def debug_dump_leagues
   #puts OpenedLeague.map(&:dump_string)
@@ -905,8 +895,7 @@ def debug_create_players(n)
   max_user_id = User.count + 1
   n.times do |i|
     name = "testman%02d" % (i + max_user_id)
-    user = User.create_from_twitter(i, name, name + '5555') # todo: OUT!!!
-    p player = Player.find_or_create(:user_id => user.id, :game_master? => true)
+    p create_game_master(name, -1 - i)
   end
 end
 
@@ -952,6 +941,10 @@ end
 
 def logp(str, b = binding) puts "#{str} => #{eval(str, b)}" end
 
+unless User.first # trap: create game master
+  create_game_master(0, 'testman')
+end
+
 if $0 == __FILE__
   if $PP_Debug 
     debug_create_players(5) if Player.count == 0
@@ -964,4 +957,47 @@ if $0 == __FILE__
   end
 
   run_game_times.times { run_core }
+
+  def update_custam(user, name, text)
+    custam = Custam.find_or_create(:user_id => user.id, :name => name)
+    text.each_line do |line|
+      line.sub!(/\s+$/, '')
+      if line[/\s*(card\d+)\s+([A-Z0-9]+)\s+(.+)/]
+        card_name, asin, nick = $1, $2, $3
+        custam_card = CustamCard.find_or_create(:custam_id => custam.id, :name => card_name)
+        custam_card.update :asin => asin, :nick => nick
+      end
+    end
+  end
+
+text = <<EOS
+  card01 B000XT2D80 アマガエル
+  card02 B000XSWM7I モリアオガエル
+  card03 B000XT2D9E ニホンヒキガエル
+
+  card04 B000XT2DEE カブトムシ 
+  card05 B000XT0Q98 ノコギリクワガタ 
+  card06 B000XSWMF0 オオクワガタ 
+  card07 B000XSWMG4 ヘラクレスオオカブト 
+
+  card08 B000XT0Q0M ドチザメ 
+  card09 B000XSYLXG アオウミガメ 
+  card10 B000XSV9AE バンドウイルカ 
+  card11 B000XSYM0I ロブスター 
+
+  card12 B000XSV9TU アフリカゾウ 
+  card13 B000XSV9UY ゴリラ 
+  card14 B000XSYM4Y キリン 
+  card15 B000XT2DBC ライオン 
+
+  B000XT2D12 ステゴサウルス 
+  B000XSWLT2 プレシオサウルス 
+  B000XSWLUQ サイカニア 
+  B000XT2CZO トリケラトプス 
+  B000XSWLQ0 ブラキオサウルス 
+  B000XSWLRE プテラノドン 
+  B000XSV97M パラサウロロフス 
+  B000XT2D1W ティラノサウルス 
+EOS
+  update_custam(User.find(:id => 1), 'title', text)
 end

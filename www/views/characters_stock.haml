@@ -30,10 +30,10 @@
     %th jewel
     %th{:colspan=>4} amazon.co.jp の関連商品
   - CharacterStock.each_with_index do |stock, idx|
-    - character = stock.character
+    - character = stock.character(:player => @player)
     %tr
       %td.c!= idx + 1
-      %td.l!= character.name
+      %td.l!= character.nick
       %td.r!= character.off_org
       %td.r!= character.def_org
       %td.r!= character.agi_org

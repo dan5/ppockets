@@ -2,7 +2,7 @@
   ==<!--
   == .custam_notice { display: block; }
   - Character::Values.keys.each do |name|
-    - asin = Character.asin(name)
+    - asin = @custam.find_card(name).asin
     - item = AmazonItem.find_item(asin)
     - img_url = item.smallimage_url
     ==.#{name} { background-image: url("#{img_url}"); }

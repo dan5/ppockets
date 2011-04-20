@@ -41,6 +41,7 @@ before do
   @notices = session[:notices] || []
   session[:debug_logs] = []
   session[:notices] = []
+  @custam = (@player and @player.user.custam) || Custam.first
 end
 
 error do
@@ -337,7 +338,7 @@ __END__
             = link_to 'Logout', "/logout"
           - else
             = link_to 'Login', "/login"
-    .custam_notice== @player.nameが編集したニックネームとamazon関連商品を表示しています。
+    .custam_notice== @#{h @custam.user.name}が編集したニックネームとamazon関連商品を表示しています。
     - @debug_logs.each do |e|
       .debug_log&= e
     - @notices.each do |e|
