@@ -58,7 +58,7 @@
       %td{:width => 40}
       - character_logs.each do |e|
         %td.border.c.small_image{:class=>e.name}
-          - asin = Character.asin(e.name)
+          - asin = e.character(:player => @player).asin
           - item = AmazonItem.find_item(asin)
           .popup
             %a{:href => "/amazon/#{h item.asin}"}

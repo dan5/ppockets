@@ -587,6 +587,11 @@ class CharacterLog < Sequel::Model
   create_table unless table_exists?
 
   def ghost?() name == 'ghost' end
+
+  def character(opts = {})
+    opts[:name] = name
+    Character.new(opts)
+  end
 end
 
 class DefaultCharacter < Hash
