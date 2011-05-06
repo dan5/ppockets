@@ -7,7 +7,7 @@
   == time: #{game_env.game_time}
 
 - if @notices.size > 0 or @notices_h.size > 0
-  .message
+  .notices
     %ul
       - @notices.each do |e|
         %li.notice&= e
