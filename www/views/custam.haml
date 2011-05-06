@@ -1,4 +1,10 @@
 = haml :_character_style
+
+%ul.todo
+  %li カスタムの作成と削除。ないときは作成ボタン。ある時は削除ボタン。他人のカスタムを使っているときは「「タイトル」を使う」
+  %li nick等の文字数制限
+  %li titleその他の情報もbody部で設定（デフォルトタイトルは@nameのカスタマイズ）
+
 %form.custam_edit{:name => 'simple-form', :method => 'POST'}
   .field
     %label{:for => 'title'} title:
