@@ -42,6 +42,15 @@ before do
   session[:debug_logs] = []
   session[:notices] = []
   @custam = (@player and @player.user.custam) || Custam.first
+  if @player
+    @notices_h = []
+    if @player.new_characters.count > 0
+      @notices_h << link_to(h("#{@player.new_characters.count}枚の新しいカードがあります"), '/new_character')
+    end
+    if @player.num_commands > 0
+      @notices_h << "コマンドを#{h @player.num_commands}回実行できます"
+    end
+  end
 end
 
 error do
@@ -341,8 +350,6 @@ __END__
     .custam_notice== @#{h @custam.user.name}が編集したニックネームとamazon関連商品を表示しています。
     - @debug_logs.each do |e|
       .debug_log&= e
-    - @notices.each do |e|
-      .notice&= e
     = yield
     .footer
       %hr

@@ -6,13 +6,13 @@
   == 0勝 0敗 0分 /
   == time: #{game_env.game_time}
 
-.message
-  %ul
-    - if @player.new_characters.count > 0
-      %li
-        = link_to h("#{@player.new_characters.count}枚の新しいカードがあります"), '/new_character'
-    - if @player.num_commands > 0
-      %li== コマンドを#{h @player.num_commands}回実行できます
+- if @notices.size > 0 or @notices_h.size > 0
+  .message
+    %ul
+      - @notices.each do |e|
+        %li.notice&= e
+      - @notices_h.each do |e|
+        %li= e
 
 %h2 Cards
 %table.characters
