@@ -1,11 +1,12 @@
 
 .custam_notice== @player.nameが編集した商品を情報を表示しています。
 
-%p
-  todo: ここに商品の説明を表示する。
+%p todo: params
+%p todo: 説明を表示する。
+%p todo: ドロップアイテム
 
 .amazon_show.c
-  %h2= link_to h(@item.title), @item.detailpageurl
+  %h2= link_to h(unescape_html @item.title), @item.detailpageurl
   .image
     - img_url = @item.largeimage_url
     - img = "<img src='#{img_url}'>"

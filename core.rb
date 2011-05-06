@@ -140,6 +140,13 @@ end
 require 'helper'
 Sequel::Model.plugin(:schema)
 
+module HaveCharacter
+  def character(opts = {})
+    opts[:name] = name
+    Character.new(opts)
+  end
+end
+
 class Custam < Sequel::Model
   many_to_one :user
   one_to_many :custam_cards
@@ -156,9 +163,25 @@ class Custam < Sequel::Model
     card = CustamCard.find(:custam_id => id, :name => name)
     card or CustamCard.new(:nick => name, :asin => 'B00158V3IE')
   end
+
+  def update_custam_card(text)
+    hash = {}
+    text.each_line do |line|
+      line.sub!(/\s+$/, '')
+      next if line[/[<>'"&]/]
+      if line[/\s*(card\d+)\s+([A-Z0-9]+)\s+(.+)/]
+        card_name, asin, nick = $1, $2, $3
+        custam_card = CustamCard.find_or_create(:custam_id => self.id, :name => card_name)
+        custam_card.update :asin => asin, :nick => nick
+        hash[card_name] = [asin, nick]
+      end
+    end
+    hash
+  end
 end
 
 class CustamCard < Sequel::Model
+  include HaveCharacter
   many_to_one :custam
   set_schema {
     primary_key :id
@@ -192,6 +215,7 @@ class AmazonItem < Sequel::Model
     unless item = self.find(:asin => asin)
       res = Amazon::Ecs.item_search(asin, :search_index => 'All', :response_group => 'Medium')
       attributes = Attributes.inject({}) {|r, e| r[e.gsub('/', '_')] = res.items.first.get(e); r }
+      p attributes
       item = self.create attributes
     end
     item
@@ -474,6 +498,7 @@ class Result < Sequel::Model
 end
 
 class NewCharacter < Sequel::Model
+  include HaveCharacter
   many_to_one :player
   set_schema {
     primary_key :id
@@ -481,10 +506,6 @@ class NewCharacter < Sequel::Model
     String :name
   }
   create_table unless table_exists?
-
-  def character
-    Character.new(:name => name)
-  end
 end
 
 class Character < Sequel::Model
@@ -541,8 +562,12 @@ class Character < Sequel::Model
     Values[name]
   end
 
+  def self.names
+    Values.keys
+  end
+
   def self.sample_name
-    Values.keys.sample
+    self.names.sample
   end
 
   Values = {
@@ -611,6 +636,7 @@ class Log < Sequel::Model
 end
 
 class CharacterStock < Sequel::Model
+  include HaveCharacter
   set_schema {
     primary_key :id
     String :name
@@ -618,11 +644,6 @@ class CharacterStock < Sequel::Model
     Int :price, :default => 500
   }
   create_table unless table_exists?
-
-  def character(opts = {})
-    opts[:name] = name
-    Character.new(opts)
-  end
 end
 
 # -- core ---------------------
@@ -874,7 +895,7 @@ end
 
 def character_shop
   dump_method_name
-  Character::Values.keys.each do |name|
+  Character.names.each do |name|
     CharacterStock.find_or_create(:name => name)
   end
   max = 10000
@@ -965,14 +986,7 @@ if $0 == __FILE__
 
   def update_custam(user, name, text)
     custam = Custam.find_or_create(:user_id => user.id, :name => name)
-    text.each_line do |line|
-      line.sub!(/\s+$/, '')
-      if line[/\s*(card\d+)\s+([A-Z0-9]+)\s+(.+)/]
-        card_name, asin, nick = $1, $2, $3
-        custam_card = CustamCard.find_or_create(:custam_id => custam.id, :name => card_name)
-        custam_card.update :asin => asin, :nick => nick
-      end
-    end
+    custam.update_custam_card(text)
   end
 
 text = <<EOS

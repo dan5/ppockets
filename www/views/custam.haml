@@ -1,0 +1,35 @@
+= haml :_character_style
+%form.custam_edit{:name => 'simple-form', :method => 'POST'}
+  .field
+    %label{:for => 'title'} title:
+    %input{:type => 'text', :id => 'subject', :name => 'subject', :value => "#{h title}", :size => 40}
+  .field
+    %label{:for => 'body'}
+    %textarea{:id => 'body', :name => 'body', :rows => 20, :cols => 50}&=body
+  .button
+    %input{:type => 'submit', :value => 'save'}
+    %input{:type => 'submit', :value => 'delete'}
+
+%hr
+%table.characters
+  %tr
+    %th card
+    %th asin
+    %th nick
+    %th.space{:width=>10}
+    %th{:colspan=>2} amazon.co.jp の関連商品
+  - @player.characters_.each do |character|
+    - i = character.position
+  - @player.user.custam.custam_cards.each do |e|
+    %tr
+      %td&= e.name
+      %td&= e.asin
+      %td&= e.nick
+      %td
+      - item = e.character(:player => @player).amazon_item
+      %td.c.image{:class=>e.name}
+        = link_to "<img src='/images/spacer.png'>", "/amazon/#{h item.asin}"
+      %td.l.amazoninfo
+        &= item.title
+        %br
+        = link_to 'amazon.co.jp で詳細を見る', item.detailpageurl

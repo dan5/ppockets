@@ -15,6 +15,7 @@ before do
 end
 
 helpers do
+  def unescape_html(text) CGI::unescapeHTML(text) end
   def plus_param(character, meth)
     param = character.__send__(meth)
     param == 0 ? '' : "+#{param}"
@@ -92,6 +93,26 @@ end
 get '/logs' do
   @logs = @player.logs
   haml :logs
+end
+
+get '/custam' do
+  if @player
+    custam = @player.user.custam || Custam.create(:user => @player.user, :name => 'test2222')
+    body = Character.names.map {|name|
+      c = custam.find_card(name)
+      asin = c ? c.asin : nil
+      nick = c ? c.nick : nil
+      "#{name}\t#{asin}\t#{nick}\n" }.join
+    haml :custam, :locals => {:title => @player.user.custam.name, :body => body}
+  else
+   'please login'
+  end
+end
+
+post '/custam' do
+  text = params[:body]
+  hash = @player.user.custam.update_custam_card(text)
+  hash.map {|k, v| "#{k} => #{v}\n" }.join
 end
 
 get '/new_character' do
@@ -326,35 +347,3 @@ __END__
 - else
   %p.todo @todo: まだ試合は行われていません
 &= game.values
-
-
-@@ layout
-%html
-  %head
-    %link(rel='stylesheet' type='text/css' href='/stylesheet.css')
-  %body
-    .todo todo: 広告設置予定地
-    %table.menu{:width=>'100%'}
-      %tr
-        %td
-          %span.menu= link_to 'HOME', "/"
-          %span.menu= link_to 'LEAGUES', "/leagues"
-          %span.menu= link_to 'PLAYERS', "/players"
-          %span.menu= link_to 'CARDS SHOP', "/characters/stock"
-          %span.menu= link_to 'AMAZON', "/amazon"
-        %td.r
-          - if @player
-            = link_to 'Logout', "/logout"
-          - else
-            = link_to 'Login', "/login"
-    .custam_notice== @#{h @custam.user.name}が編集したニックネームとamazon関連商品を表示しています。
-    - @debug_logs.each do |e|
-      .debug_log&= e
-    = yield
-    .footer
-      %hr
-      .debug
-        == time: #{h game_env.game_time}
-      .debug_commands
-        = link_to 'Run core', "/dcmd/run_core"
-      ppockets
