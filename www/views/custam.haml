@@ -1,41 +1,13 @@
-= haml :_character_style
+.custam_menu
+  %p.notice
+    ==使用しているテーマは「#{h @player.custam.name}(#{h @player.custam.user.name})」です。
+  %ul
+    %li= link_to 'デフォルトのテーマを使う', '/cmd/use_default_custam'
+    %li= link_to '自分のカスタマイズテーマを使う', '/cmd/use_own_custam'
+    %li= link_to '自分のカスタマイズテーマを編集する', '/custam_edit'
+    %li= link_to '自分のカスタマイズテーマを削除する', '/custam_delete'
 
 %ul.todo
-  %li カスタムの作成と削除。ないときは作成ボタン。ある時は削除ボタン。他人のカスタムを使っているときは「「タイトル」を使う」
   %li nick等の文字数制限
   %li titleその他の情報もbody部で設定（デフォルトタイトルは@nameのカスタマイズ）
 
-%form.custam_edit{:name => 'simple-form', :method => 'POST'}
-  .field
-    %label{:for => 'title'} title:
-    %input{:type => 'text', :id => 'subject', :name => 'subject', :value => "#{h title}", :size => 40}
-  .field
-    %label{:for => 'body'}
-    %textarea{:id => 'body', :name => 'body', :rows => 20, :cols => 50}&=body
-  .button
-    %input{:type => 'submit', :value => 'save'}
-    %input{:type => 'submit', :value => 'delete'}
-
-%hr
-%table.characters
-  %tr
-    %th card
-    %th asin
-    %th nick
-    %th.space{:width=>10}
-    %th{:colspan=>2} amazon.co.jp の関連商品
-  - @player.characters_.each do |character|
-    - i = character.position
-  - @player.user.custam.custam_cards.each do |e|
-    %tr
-      %td&= e.name
-      %td&= e.asin
-      %td&= e.nick
-      %td
-      - item = e.character(:player => @player).amazon_item
-      %td.c.image{:class=>e.name}
-        = link_to "<img src='/images/spacer.png'>", "/amazon/#{h item.asin}"
-      %td.l.amazoninfo
-        &= item.title
-        %br
-        = link_to 'amazon.co.jp で詳細を見る', item.detailpageurl

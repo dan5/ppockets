@@ -153,7 +153,7 @@ class Custam < Sequel::Model
   set_schema {
     primary_key :id
     foreign_key :user_id, :users
-    String :name
+    String :name, :default => 'no name'
     String :uid
   }
   create_table unless table_exists?
@@ -169,13 +169,14 @@ class Custam < Sequel::Model
     text.each_line do |line|
       line.sub!(/\s+$/, '')
       next if line[/[<>'"&]/]
-      if line[/\s*(card\d+)\s+([A-Z0-9]+)\s+(.+)/]
+      if line[/\s*(card\d+)\s+([A-Z0-9]{10})\s+(.+)/]
         card_name, asin, nick = $1, $2, $3
         custam_card = CustamCard.find_or_create(:custam_id => self.id, :name => card_name)
         custam_card.update :asin => asin, :nick => nick
         hash[card_name] = [asin, nick]
       end
     end
+    user.update(:active_custam_id => self.id)
     hash
   end
 end
@@ -215,10 +216,11 @@ class AmazonItem < Sequel::Model
     unless item = self.find(:asin => asin)
       res = Amazon::Ecs.item_search(asin, :search_index => 'All', :response_group => 'Medium')
       attributes = Attributes.inject({}) {|r, e| r[e.gsub('/', '_')] = res.items.first.get(e); r }
-      p attributes
       item = self.create attributes
     end
     item
+  rescue
+    self.first if res.items.empty?
   end
 end
 
@@ -244,13 +246,26 @@ class User < Sequel::Model
   one_to_many :custams
   set_schema {
     primary_key :id
+    foreign_key :active_custam_id, :custams
     String :name, :unique => true
     String :login_password, :unique => true
   }
   create_table unless table_exists?
 
   def custam
-    custams.first
+    active_custam_id ? Custam.find(:id => active_custam_id) : Custam.first
+  end
+
+  def own_custam
+    Custam.find_or_create(:user_id => player.user.id)
+  end
+
+  def use_default_custam
+    update(:active_custam_id => Custam.first.id)
+  end
+
+  def use_own_custam
+    update(:active_custam_id => own_custam.id)
   end
 
   def self.create_from_twitter(twitter_id, name, login_password = nil)
@@ -312,6 +327,7 @@ class Player < Sequel::Model
   }
   create_table unless table_exists?
 
+  def custam() user.custam end
   def name() user.name end
   def short_name() name.length > 7 ? name[0, 6] + '..' : name end
   def games_() Game.filter('home_player_id = ? OR away_player_id = ?', id, id) end
@@ -539,7 +555,7 @@ class Character < Sequel::Model
   end
 
   def custam
-    (player and player.user.custam) || Custam.first
+    (player and player.custam)
   end
 
   def delete_order

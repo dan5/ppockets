@@ -42,7 +42,7 @@ before do
   @notices = session[:notices] || []
   session[:debug_logs] = []
   session[:notices] = []
-  @custam = (@player and @player.user.custam) || Custam.first
+  @custam = (@player and @player.custam) || Custam.first
   if @player
     @notices_h = []
     if @player.new_characters.count > 0
@@ -96,23 +96,28 @@ get '/logs' do
 end
 
 get '/custam' do
-  if @player
-    custam = @player.user.custam || Custam.create(:user => @player.user, :name => 'test2222')
+  haml :custam
+end
+
+get '/custam_edit' do
+  unless @player
+   'please login'
+  else
+    custam = @player.user.own_custam
     body = Character.names.map {|name|
       c = custam.find_card(name)
       asin = c ? c.asin : nil
       nick = c ? c.nick : nil
       "#{name}\t#{asin}\t#{nick}\n" }.join
-    haml :custam, :locals => {:title => @player.user.custam.name, :body => body}
-  else
-   'please login'
+    haml :custam_edit, :locals => {:title => @player.custam.name, :body => body}
   end
 end
 
-post '/custam' do
-  text = params[:body]
-  hash = @player.user.custam.update_custam_card(text)
-  hash.map {|k, v| "#{k} => #{v}\n" }.join
+post '/custam_edit' do
+  title, text = params[:title], params[:body]
+  @player.user.own_custam.update(:name =>title)
+  @player.user.own_custam.update_custam_card(text)
+  redirect '/custam_edit'
 end
 
 get '/new_character' do
@@ -234,6 +239,16 @@ get '/cmd/buy_character/:id/:pre_price' do
   stock = CharacterStock.find(:id => params[:id])
   session[:characters_notice] << "#{stock.name}のカードを買いました"
   redirect '/characters/stock'
+end
+
+get '/cmd/use_default_custam' do
+  @player.user.use_default_custam
+  redirect '/custam'
+end
+
+get '/cmd/use_own_custam' do
+  @player.user.use_own_custam
+  redirect '/custam'
 end
 
 get '/dcmd/run_core' do
