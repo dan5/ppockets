@@ -28,7 +28,8 @@
     %th life
     %th stock
     %th jewel
-    %th{:colspan=>4} Amazon.co.jpアソシエイト
+    %th.space{:width=>20}
+    %th.associate{:colspan=>2} Amazon.co.jpアソシエイト
   - CharacterStock.each_with_index do |stock, idx|
     - character = stock.character(:player => @player)
     %tr
@@ -44,7 +45,6 @@
           = link_to h(stock.price), "/characters/stock?id=#{h stock.id}&prebuy=true"
         - else
           &= stock.price
-      %td.space{:width=>20}
       %td
       - item = character.amazon_item
       %td.c.image{:class=>character.name}
