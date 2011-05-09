@@ -189,6 +189,7 @@ class CustamCard < Sequel::Model
     foreign_key :custam_id, :custams
     String :name
     String :nick
+    String :detail
     String :asin
   }
   create_table unless table_exists?
@@ -547,8 +548,8 @@ class Character < Sequel::Model
   def agi() agi_org end
   def job() :fig end
 
-  def nick() custam.find_card(name).nick end
-  def asin() custam.find_card(name).asin end
+  def nick() custam!.find_card(name).nick end
+  def asin() custam!.find_card(name).asin end
 
   def amazon_item
     AmazonItem.find_item(asin)
@@ -556,6 +557,10 @@ class Character < Sequel::Model
 
   def custam
     (player and player.custam)
+  end
+
+  def custam!
+    custam or Custam.first
   end
 
   def delete_order

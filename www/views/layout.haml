@@ -2,30 +2,33 @@
   %head
     %link(rel='stylesheet' type='text/css' href='/stylesheet.css')
   %body
-    <iframe src="http://rcm-jp.amazon.co.jp/e/cm?t=dgames0a-22&o=9&p=48&l=ur1&category=amazoncampaign&banner=0GGC29P1PMXNRY3VH8R2&f=ifr" width="728" height="90" scrolling="no" border="0" marginwidth="0" style="border:none;" frameborder="0"></iframe>
-    %table.menu{:width=>'100%'}
-      %tr
-        %td
-          %span.menu= link_to 'HOME', "/"
-          %span.menu= link_to 'LEAGUES', "/leagues"
-          %span.menu= link_to 'PLAYERS', "/players"
-          %span.menu= link_to 'CARDS SHOP', "/characters/stock"
-          %span.menu= link_to 'AMAZON', "/amazon"
-        %td.r
-          - if @player
-            = link_to 'Custam', "/custam"
-            = link_to 'Logout', "/logout"
-          - else
-            = link_to 'Login', "/login"
-    - unless @player
-      .custam_notice== @#{h @custam.user.name}が編集したニックネームとamazon関連商品を表示しています。
-    - @debug_logs.each do |e|
-      .debug_log&= e
-    = yield
-    .footer
-      %hr
-      .debug
-        == time: #{h game_env.game_time}
-      .debug_commands
-        = link_to 'Run core', "/dcmd/run_core"
-      ppockets
+    .main
+      %sapn.content
+        <!--
+        <iframe src="http://rcm-jp.amazon.co.jp/e/cm?t=dgames0a-22&o=9&p=48&l=ur1&category=amazoncampaign&banner=0GGC29P1PMXNRY3VH8R2&f=ifr" width="728" height="90" scrolling="no" border="0" marginwidth="0" style="border:none;" frameborder="0"></iframe>-->
+        %table.menu{:width=>'100%'}
+          %tr
+            %td
+              %span.menu= link_to 'HOME', "/"
+              %span.menu= link_to 'LEAGUES', "/leagues"
+              %span.menu= link_to 'PLAYERS', "/players"
+              %span.menu= link_to 'CARDS SHOP', "/characters/stock"
+              %span.menu= link_to 'AMAZON', "/amazon"
+            %td.r
+              - if @player
+                = link_to 'Custam', "/custam"
+                = link_to 'Logout', "/logout"
+              - else
+                = link_to 'Login', "/login"
+        - unless @player
+          .custam_notice== @#{h @custam.user.name}が編集したニックネームとamazon関連商品を表示しています。
+        - @debug_logs.each do |e|
+          .debug_log&= e
+        = yield
+      .footer
+        %hr
+        .debug
+          == time: #{h game_env.game_time}
+        .debug_commands
+          = link_to 'Run core', "/dcmd/run_core"
+        ppockets
