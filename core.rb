@@ -154,9 +154,18 @@ class Custam < Sequel::Model
     primary_key :id
     foreign_key :user_id, :users
     String :name, :default => 'no name'
-    String :uid
+    String :uid, :unique => true
   }
   create_table unless table_exists?
+
+  def before_create
+    uid = nil
+    while (true)
+      uid = rand(100000000000000000000).to_s(36)
+      break unless Custam.find(:uid => uid)
+    end
+    self.uid = uid
+  end
 
   def find_card(name)
     #custam_cards_dataset.find(:name => name)
@@ -259,6 +268,19 @@ class User < Sequel::Model
 
   def own_custam
     Custam.find_or_create(:user_id => player.user.id)
+  end
+
+  def delete_own_custam
+    c_ = Custam.filter(:user_id => player.user.id)
+    if c = c_.first
+      use_default_custam
+      CustamCard.filter(:custam_id => c.id).delete
+      c_.delete
+    end
+  end
+
+  def use_custam(uid)
+    update(:active_custam_id => Custam.find(:uid => uid).id)
   end
 
   def use_default_custam

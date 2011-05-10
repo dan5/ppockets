@@ -96,24 +96,35 @@ get '/logs' do
 end
 
 get '/custam' do
+  return 'please login' unless @player
   haml :custam
 end
 
+get '/custam/:uid' do
+  custam = Custam.find(:uid => params[:uid])
+  return 'cannot found' unless custam
+  haml :custam_show, :locals => {:custam => custam}
+end
+
+get '/custam_delete' do
+  return 'please login' unless @player
+  @player.user.delete_own_custam
+  redirect '/custam'
+end
+
 get '/custam_edit' do
-  unless @player
-   'please login'
-  else
-    custam = @player.user.own_custam
-    body = Character.names.map {|name|
-      c = custam.find_card(name)
-      asin = c ? c.asin : nil
-      nick = c ? c.nick : nil
-      "#{name}\t#{asin}\t#{nick}\n" }.join
-    haml :custam_edit, :locals => {:title => @player.custam.name, :body => body}
-  end
+  return 'please login' unless @player
+  custam = @player.user.own_custam
+  body = Character.names.map {|name|
+    c = custam.find_card(name)
+    asin = c ? c.asin : nil
+    nick = c ? c.nick : nil
+    "#{name}\t#{asin}\t#{nick}\n" }.join
+  haml :custam_edit, :locals => {:title => @player.custam.name, :body => body}
 end
 
 post '/custam_edit' do
+  return 'please login' unless @player
   title, text = params[:title], params[:body]
   @player.user.own_custam.update(:name =>title)
   @player.user.own_custam.update_custam_card(text)
@@ -239,6 +250,11 @@ get '/cmd/buy_character/:id/:pre_price' do
   stock = CharacterStock.find(:id => params[:id])
   session[:characters_notice] << "#{stock.name}のカードを買いました"
   redirect '/characters/stock'
+end
+
+get '/cmd/use_custam/:uid' do
+  @player.user.use_custam(params[:uid])
+  redirect '/custam'
 end
 
 get '/cmd/use_default_custam' do

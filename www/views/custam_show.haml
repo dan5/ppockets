@@ -1,0 +1,9 @@
+- url = 'http://' + env['HTTP_HOST'] + env['REQUEST_PATH']
+
+%ul
+  %li== title: #{h custam.name}
+  %li== auther: #{h custam.user.name}
+  %li== url: #{link_to h(url), h(url)}
+
+- if @player and custam.user != @player.user
+  %span= link_to 'このカスタマイズテーマを使う', "/cmd/use_custam/#{h custam.uid}"
