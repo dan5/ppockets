@@ -1,0 +1,8 @@
+
+- asin = character_log.character(:player => @player).asin
+- item = AmazonItem.find_item(asin)
+.small_image{:class=>character_log.name}
+  %a{:href => "/amazon/#{h item.asin}"}
+    %img.small_spacer{:src => '/images/spacer.png'}
+.associate
+  Amazon.co.jp アソシエイト

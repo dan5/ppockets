@@ -1,0 +1,41 @@
+= haml :_character_style
+
+- game = Game.find(:id => params[:id])
+- if game.played?
+  %p.todo @todo: 試合結果の表示
+  - character_logs = Array.new(5) { [] }
+  - game.character_logs_dataset.each do |e|
+    - idx = e.home? ? 0 : 1
+    - character_logs[e.position][idx] = e
+  %table.game_logs
+    - def c_params(e) h("#{e.name} #{e.off}/#{e.def}/#{e.agi}/#{e.life}") end
+    - character_logs.each do |c_home, c_away|
+      %tr
+        %th.c{:colspan=>4, :width=>600}
+          .turn== TURN #{h c_home.position + 1}
+          - case c_home.action
+          - when 'comp_agi'
+            agi対決
+          - when 'offense'
+            == #{h game.home_player.name}の攻撃
+          - else
+            == #{h game.away_player.name}の攻撃
+      - if c_home.action == 'offense' or (c_home.action == 'comp_agi' and c_home.agi >= c_away.agi)
+        %tr
+          %td.associate= haml :_games_show_associate, :locals => {:character_log => c_home}
+          %td.message{:colspan=>2}= haml :_games_show_message, :locals => {:own => c_home, :opp => c_away}
+        %tr
+          %td.r.message{:colspan=>2}= haml :_games_show_message, :locals => {:own => c_away, :opp => c_home}
+          %td.associate= haml :_games_show_associate, :locals => {:character_log => c_away}
+      - else
+        %tr
+          %td.r.message{:colspan=>2}= haml :_games_show_message, :locals => {:own => c_away, :opp => c_home}
+          %td.associate= haml :_games_show_associate, :locals => {:character_log => c_away}
+        %tr
+          %td.associate= haml :_games_show_associate, :locals => {:character_log => c_home}
+          %td.message{:colspan=>2}= haml :_games_show_message, :locals => {:own => c_home, :opp => c_away}
+
+
+- else
+  %p.todo @todo: まだ試合は行われていません
+&= game.values

@@ -230,7 +230,7 @@ class AmazonItem < Sequel::Model
     end
     item
   rescue
-    self.first if res.items.empty?
+    self.first if res.nil? || res.items.empty?
   end
 end
 
@@ -645,6 +645,7 @@ class CharacterLog < Sequel::Model
     String :name
     Bool :home?
     Int :position
+    String :action
     Int :score # 0:draw nil:miss else:success
     Int :off
     Int :def
@@ -792,28 +793,42 @@ def play_game(home_characters, away_characters)
   game_logs = []
   mode = :comp_agi
   home_characters.zip(away_characters).each do |home_character, away_character|
-    last_mode = mode
-    mode, log = _play_game(mode, home_character, away_character)
-    game_logs << [last_mode] + log
+    next_mode, log = _play_game(mode, home_character, away_character)
+    game_logs << [mode] + log
+    mode = next_mode
   end
   game_logs
 end
 
-def set_score(game, game_logs)
-  home_character_logs = game.character_logs_dataset.filter(:player_id => game.home_player.id)
-  away_character_logs = game.character_logs_dataset.filter(:player_id => game.away_player.id)
-  away_character_logs = game.character_logs_dataset.filter(:player_id => game.away_player.id)
-  assert home_character_logs.count != 5
-  assert away_character_logs.count != 5
+def set_score_and_action(game, game_logs)
+  h_logs = game.character_logs_dataset.filter(:player_id => game.home_player.id)
+  a_logs = game.character_logs_dataset.filter(:player_id => game.away_player.id)
+  assert h_logs.count != 5 # --debug
+  assert a_logs.count != 5 # --debug
   game_logs.each.with_index do |log, i|
+    h = h_logs.filter(:position => i)
+    a = a_logs.filter(:position => i)
     mode, score = log
+    case mode
+    when :comp_agi
+      h.update(:action => 'comp_agi')
+      a.update(:action => 'comp_agi')
+    when :atack_home
+      h.update(:action => 'offense')
+      a.update(:action => 'defense')
+    when :atack_away
+      h.update(:action => 'defense')
+      a.update(:action => 'offense')
+    else
+      assert true
+    end
     if score # @trap: (score == 0) => :draw
-      home_character_logs.filter(:position => i).update(:score => score) if mode == :atack_home
-      away_character_logs.filter(:position => i).update(:score => score) if mode == :atack_away
+      h.update(:score => score) if mode == :atack_home
+      a.update(:score => score) if mode == :atack_away
     end
   end
-  game.home_score = home_character_logs.sum(:score) || 0
-  game.away_score = away_character_logs.sum(:score) || 0
+  game.home_score = h_logs.sum(:score) || 0
+  game.away_score = a_logs.sum(:score) || 0
 end
 
 def create_game_log(players, scores)
@@ -834,7 +849,7 @@ def do_game(game)
   assert away_characters.size != 5
   puts "#{game.home_player.name} vs #{game.away_player.name}"
   game_logs = play_game(home_characters, away_characters)
-  set_score(game, game_logs)
+  set_score_and_action(game, game_logs)
   puts "log: #{game.home_score}-#{game.away_score} #{game_logs.inspect}"
   game.update(:played? => true)
   create_game_log([game.home_player, game.away_player], [game.home_score, game.away_score])

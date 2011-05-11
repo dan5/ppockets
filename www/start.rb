@@ -370,11 +370,3 @@ __END__
   - ClosedLeague.limit(50).each do |league|
     = link_to_league league
 
-
-@@ games_show
-- game = Game.find(:id => params[:id])
-- if game.played?
-  %p.todo @todo: 試合結果の表示
-- else
-  %p.todo @todo: まだ試合は行われていません
-&= game.values

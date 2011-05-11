@@ -1,0 +1,38 @@
+- result = 'draw'
+- message = '・・・'
+- case own.action
+- when 'comp_agi'
+  - if own.agi == opp.agi
+    - message = 'やるな！？'
+  - else
+    - if own.agi > opp.agi
+      - message = 'させるかっ！！'
+      - result = 'win'
+    - else
+      - message = 'くっ速い・・・'
+      - result = 'lose'
+- when 'offense'
+  - message = '覚悟なさいっ！'
+  - case own.score
+  - when 0
+  - when nil
+    - result = 'miss'
+  - else
+    - result = "#{own.score}ダメージ"
+- when 'defense'
+  - case opp.score
+  - when 0
+    - message = 'も、もつのか！？'
+  - when nil
+    - message = '無駄だ！！'
+    - result = 'guard'
+  - else
+    - message = 'うっ'
+    - result = 'miss'
+.body
+  &= message
+.info
+  - if own.home?
+    == #{c_params(own)} => #{h result}
+  - else
+    == #{h result} <= #{c_params(own)}
