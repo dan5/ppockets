@@ -143,6 +143,7 @@ Sequel::Model.plugin(:schema)
 module HaveCharacter
   def character(opts = {})
     opts[:name] = name
+    opts[:player] = player if defined?(player) && player
     Character.new(opts)
   end
 end
@@ -170,7 +171,7 @@ class Custam < Sequel::Model
   def find_card(name)
     #custam_cards_dataset.find(:name => name)
     card = CustamCard.find(:custam_id => id, :name => name)
-    card or CustamCard.new(:nick => name, :asin => 'B00158V3IE')
+    card or CustamCard.new(:nick => name, :asin => AmazonItem.default_asin)
   end
 
   def update_custam_card(text)
@@ -231,6 +232,10 @@ class AmazonItem < Sequel::Model
     item
   rescue
     self.first if res.nil? || res.items.empty?
+  end
+
+  def self.default_asin
+    'B00158V3IE'
   end
 end
 

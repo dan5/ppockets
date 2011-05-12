@@ -1,7 +1,7 @@
 %style
   ==<!--
   == .custam_notice { display: block; }
-  - Character::Values.keys.each do |name|
+  - (Character::Values.keys + ['ghost']).each do |name|
     - asin = @custam.find_card(name).asin
     - item = AmazonItem.find_item(asin)
     - img_url = item.smallimage_url

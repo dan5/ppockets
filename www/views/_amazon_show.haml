@@ -1,0 +1,18 @@
+.amazon_show.c
+  %hr
+  %h3 Amazon.co.jpアソシエイト
+  .image
+    - img_url = @item.largeimage_url
+    - img = "<img src='#{img_url}'>"
+    = link_to img, "/amazon/#{h @item.asin}"
+  .item_title= link_to h(unescape_html @item.title), @item.detailpageurl
+  .l
+    %ul.spec
+      %li== asin: #{h @item.asin}
+      %li== 価格￥#{h @item.amount}
+      %li== auther: #{h @item.author}
+      %li== publisher: #{h @item.publisher}
+  %hr
+
+%p
+  todo: amazon.co.jpの関連商品

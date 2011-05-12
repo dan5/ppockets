@@ -136,7 +136,7 @@ get '/new_character' do
     redirect '/'
   else
     @new_character = @player.new_characters_dataset.first
-    @item = @new_character.character.amazon_item
+    @item = @new_character.character(:player => @player).amazon_item
     haml :new_character
   end
 end

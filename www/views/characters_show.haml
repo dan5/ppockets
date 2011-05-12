@@ -4,6 +4,18 @@
 %h2== #{h @character.nick}のカード
 
 - if @player == @character.player
+  - if @characters_notice
+    .notice&= @characters_notice
+  .message
+    %p
+      - if @character.life == @character.life_org
+        = link_to h('カードショップに売る'), "/cmd/sell_character/#{@character.id}"
+        - stock = CharacterStock.find(:name => @character.name)
+        == (参考価格: #{h stock.price}J)
+      - else
+        == #{h @character.nick}のカードを捨てますか？
+        = link_to '捨てる', "/cmd/sell_character/#{@character.id}"
+        %span.memo memo: lifeが減るとカードショップに売れなくなります
   %table
     - %w(off def agi life).each do |e|
       %tr
@@ -17,19 +29,7 @@
         - else
           %td.r&= @character.send(e)
 
-  - if @characters_notice
-    .notice&= @characters_notice
-  .message
-    %p
-      - if @character.life == @character.life_org
-        = link_to h('カードショップに売る'), "/cmd/sell_character/#{@character.id}"
-        - stock = CharacterStock.find(:name => @character.name)
-        == (参考価格: #{h stock.price}J)
-      - else
-        == #{h @character.nick}のカードを捨てますか？
-        = link_to '捨てる', "/cmd/sell_character/#{@character.id}"
-        %span.memo memo: lifeが減るとカードショップに売れなくなります
+%p todo: 説明を表示する。
+%p todo: ドロップアイテム
 
-%hr
-%h2.c amazon.co.jpの関連商品
-= haml :amazon_show
+= haml :_amazon_show
