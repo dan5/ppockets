@@ -99,8 +99,9 @@ end
 
 get '/custams' do
   return 'please login' unless @player
-  res = Amazon::Ecs.item_search(@custam.title, :search_index => 'All', :response_group => 'Medium')
-  @items = res.items
+  #res = Amazon::Ecs.item_search(@custam.title, :search_index => 'All', :response_group => 'Medium')
+  #@items = res.items
+  @items = []
   haml :custam
 end
 
@@ -126,6 +127,12 @@ get '/custams/edit/:id' do
     asin = c ? c.asin : nil
     nick = c ? c.nick : nil
     "#{name}\t#{asin}\t#{nick}\n" }.join
+  (1..5).each do |i|
+    name = 'banner%02d' % i
+    c = custam.find_card(name)
+    asin = c ? c.asin : nil
+    body += "#{name}\t#{asin}\n"
+  end
   haml :custam_edit, :locals => {:body => body, :custam => custam}
 end
 

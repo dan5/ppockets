@@ -168,14 +168,9 @@ class Custam < Sequel::Model
     self.uid = uid
   end
 
-  def amazon_item(key) # todo:
-    idx = {
-      :home => 1,
-      :leagues => 2,
-      :players => 3,
-      :custams => 4,
-    }[key] || 0
-    custam_cards[idx].amazon_item
+  def amazon_item(idx) # todo:
+    name = 'banner%02d' % idx
+    (custam_cards_dataset.filter(:name => name).first or custam_cards.first).amazon_item
   end
 
   def find_card(name)
@@ -189,7 +184,8 @@ class Custam < Sequel::Model
     text.each_line do |line|
       line.sub!(/\s+$/, '')
       next if line[/[<>'"&]/]
-      if line[/\s*(card\d+)\s+([A-Z0-9]{10})\s+(.+)/]
+      if line[/\s*(card\d+)\s+([A-Z0-9]{10})\s+(.+)/] or
+         line[/\s*(banner\d+)\s+([A-Z0-9]{10})/]
         card_name, asin, nick = $1, $2, $3
         custam_card = CustamCard.find_or_create(:custam_id => self.id, :name => card_name)
         custam_card.update :asin => asin, :nick => nick

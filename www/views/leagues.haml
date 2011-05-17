@@ -1,8 +1,11 @@
 
 %h1 League
+
 %table.layout
   %tr
     %td.main
+      todo: このゲームを作るにあたり オブジェクト指向言語Ruby と Sinatra を利用させていただいています。
+
       %h2 エントリ受付中のリーグ
       .waiting
         - WaitingLeague.each do |league|
@@ -17,4 +20,4 @@
         - ClosedLeague.limit(50).each do |league|
           = link_to_league league
     %td.large_associate
-      =haml :_large_associate, :locals => {:key => :leagues}
+      = haml :_large_associate, :locals => {:banner => 2}
