@@ -1,0 +1,6 @@
+- item = @custam.amazon_item(key)
+- img_url = item.largeimage_url
+- img = "<img src='#{img_url}'>"
+.associate Amazon.co.jpアソシエイト
+.cell= link_to img, "/amazon/#{h item.asin}"
+.title&= item.title

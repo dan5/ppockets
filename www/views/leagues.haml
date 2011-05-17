@@ -1,0 +1,20 @@
+
+%h1 League
+%table.layout
+  %tr
+    %td.main
+      %h2 エントリ受付中のリーグ
+      .waiting
+        - WaitingLeague.each do |league|
+          - str = "league#{league.id}(#{league.players_count})"
+          = link_to h(str), "/leagues/#{league.id}"
+      %h2 開催中のリーグ
+      .opened
+        - OpenedLeague.each do |league|
+          = link_to_league league
+      %h2 過去のリーグ
+      .closed
+        - ClosedLeague.limit(50).each do |league|
+          = link_to_league league
+    %td.large_associate
+      =haml :_large_associate, :locals => {:key => :leagues}

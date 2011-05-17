@@ -111,8 +111,11 @@ end
 
 get '/custams/delete/:id' do
   return 'please login' unless @player
-  @player.user.delete_own_custam
-  redirect '/custam'
+  custam = @player.user.custams_dataset.filter(:id => params[:id]).first
+  @player.user.use_default_custam if @player.custam == custam
+  custam.custam_cards_dataset.delete
+  custam.delete
+  redirect '/custams'
 end
 
 get '/custams/edit/:id' do
@@ -272,11 +275,6 @@ get '/cmd/use_default_custam' do
   redirect '/custams'
 end
 
-get '/cmd/use_own_custam' do
-  @player.user.use_own_custam
-  redirect '/custams'
-end
-
 get '/dcmd/run_core' do
   if @player.game_master? or development?
     run_core 
@@ -325,63 +323,3 @@ __END__
   - @logs.each do |log|
     %p&= log.message
 = link_to 'ok', '/logs/delete_all'
-
-
-@@ players
-%h2 players
-= haml :_player_ranking
-
-
-@@ leagues_show
-- league = League.find(:id => params[:id])
-%h1== #{h league.schedule_type.capitalize} League
-%p== 更新: #{h league.schedule.join('時 ')}時
-- if league.status == 0 and (@player and !@player.entry?)
-  .entry_button
-    = link_to 'このリーグに参加する', "/leagues/#{league.id}/entry"
-    %hr
-%h2 Ranking
-- @players_ = league.players_dataset.order(:active_point.desc)
-- @result_ptn = {:league_id => league.id}
-= haml :_player_ranking
-%h2 League
-%table.league
-  - players = league.players
-  %tr
-    %th
-    - players.each do |player|
-      %th= player.short_name
-  - players.each do |home_player|
-    %tr
-      %td= link_to_player home_player
-      - players.each do |away_player|
-        - ptn1 = { :home_player_id => home_player.id, :away_player_id => away_player.id }
-        - ptn2 = { :home_player_id => away_player.id, :away_player_id => home_player.id }
-        - game = Game.filter(:league_id => league.id).filter(ptn1 | ptn2).first
-        %td.c
-          - if game
-            - if game.played?
-              - if game.home_player.id == home_player.id
-                - str = "#{h game.home_score} - #{h game.away_score}"
-              - else
-                - str = "#{h game.away_score} - #{h game.home_score}"
-              = link_to h(str), "/games/#{game.id}"
-          - else
-            &= '-'
-
-
-@@ leagues
-%h2 エントリ受付中のリーグ
-.waiting
-  - WaitingLeague.each do |league|
-    - str = "league#{league.id}(#{league.players_count})"
-    = link_to h(str), "/leagues/#{league.id}"
-%h2 開催中のリーグ
-.opened
-  - OpenedLeague.each do |league|
-    = link_to_league league
-%h2 過去のリーグ
-.closed
-  - ClosedLeague.limit(50).each do |league|
-    = link_to_league league
-

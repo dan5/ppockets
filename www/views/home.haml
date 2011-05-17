@@ -55,13 +55,7 @@
         .cell&= item.title
         .cell= link_to 'amazon.co.jpで詳細を見る', item.detailpageurl
 
-%table.home
+%table.layout
   %tr
-    %td.large_associate
-      - item = @custam.amazon_item(:home)
-      - img_url = item.largeimage_url
-      - img = "<img src='#{img_url}'>"
-      .associate Amazon.co.jpアソシエイト
-      .cell= link_to img, "/amazon/#{h item.asin}"
-      .title&= item.title
-    %td.status= haml :_home_status
+    %td.large_associate= haml :_large_associate, :locals => {:key => :home}
+    %td.main= haml :_home_status

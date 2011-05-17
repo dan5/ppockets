@@ -20,18 +20,12 @@
         %td= link_to '編集', "/custams/edit/#{custam.id}"
         %td= link_to '削除', "/custams/delete/#{custam.id}"
 
-  - @items.each do |e|
-    - img_url = e.get('largeimage/url')
-    - img = "<img src='#{img_url}'>"
-    = link_to img, "/amazon/#{h e.get(:asin)}"
-  <!--
-  %ul
-    - c = Custam.find(:user_id => @player.user.id)
-    - if c
-      %li= link_to 'カスタマイズテーマを編集する', '/custam_edit'
-      %li= link_to 'カスタマイズテーマを公開する', "/custam/#{c.uid}"
-      %li= link_to 'カスタマイズテーマを削除する', '/custam_delete'
-  a -->
+  .item_images
+    .associate Amazon.co.jpアソシエイト
+    - @items.each do |e|
+      - img_url = e.get('mediumimage/url')
+      - img = "<img src='#{img_url}'>"
+      = link_to img, "/amazon/#{h e.get(:asin)}"
 
 %ul.todo
   %li nick等の文字数制限

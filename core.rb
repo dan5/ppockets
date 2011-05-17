@@ -284,29 +284,12 @@ class User < Sequel::Model
     active_custam_id ? Custam.find(:id => active_custam_id) : Custam.first
   end
 
-  def __own_custam
-    Custam.find_or_create(:user_id => player.user.id)
-  end
-
-  def delete_own_custam
-    c_ = Custam.filter(:user_id => player.user.id)
-    if c = c_.first
-      use_default_custam
-      CustamCard.filter(:custam_id => c.id).delete
-      c_.delete
-    end
-  end
-
   def use_custam(uid)
     update(:active_custam_id => Custam.find(:uid => uid).id)
   end
 
   def use_default_custam
     update(:active_custam_id => Custam.first.id)
-  end
-
-  def __use_own_custam
-    update(:active_custam_id => own_custam.id)
   end
 
   def self.create_from_twitter(twitter_id, name, login_password = nil)
