@@ -87,16 +87,17 @@
             = link_to_player game.opponent(@player)
             - if game.played?
               &= '... '
+              - s1 = game.home?(@player) ? game.home_score : game.away_score
+              - s2 = game.home?(@player) ? game.away_score : game.home_score
+              - score = "#{h s1} - #{h s2}"
+              = link_to h(score), "/games/#{game.id}"
               - if game.home_score == game.away_score
                 - res = 'draw'
               - elsif game.home?(@player)
                 - res = game.home_score > game.away_score ? 'win' : 'lose'
               - else
                 - res = game.home_score > game.away_score ? 'lose' : 'win'
-              = link_to h(res), "/games/#{game.id}"
-              &= game.home?(@player) ? game.home_score : game.away_score
-              &= '-'
-              &= game.home?(@player) ? game.away_score : game.home_score
+              &= res
     - else
       リーグには参加していません
   %li

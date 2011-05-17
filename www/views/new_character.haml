@@ -1,7 +1,7 @@
 %h2 NEW CHARACTER
 - new_character = @player.new_characters_dataset.first
 .new_character
-  == 新しいカードは<b>#{h(new_character.character.nick)}</b>でした。
+  == 新しいカードは<b>『#{h(new_character.character.nick)}』</b>でした。
 .character
   %p&= %w(off def agi life).map {|e| "#{e} #{h new_character.character.send(e + '_org')}" }.join(' / ')
   %p todo: 説明を表示する。

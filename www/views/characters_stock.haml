@@ -13,8 +13,8 @@
     - if params[:prebuy]
       - stock = CharacterStock.find(:id => params[:id])
       %p
-        == #{h stock.name}のカードを#{h stock.price}jと交換しますか？
-        = link_to '交換する', "/cmd/buy_character/#{stock.id}/#{stock.price}"
+        == <b>『#{h stock.name}のカード』</b>を#{h stock.price}jで買いますか？ /
+        = link_to '買う', "/cmd/buy_character/#{stock.id}/#{stock.price}"
     - else
       %p いらっしゃいませ！
 

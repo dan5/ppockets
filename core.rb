@@ -186,7 +186,6 @@ class Custam < Sequel::Model
         hash[card_name] = [asin, nick]
       end
     end
-    user.update(:active_custam_id => self.id)
     hash
   end
 end
@@ -271,7 +270,7 @@ class User < Sequel::Model
     active_custam_id ? Custam.find(:id => active_custam_id) : Custam.first
   end
 
-  def own_custam
+  def __own_custam
     Custam.find_or_create(:user_id => player.user.id)
   end
 
@@ -292,7 +291,7 @@ class User < Sequel::Model
     update(:active_custam_id => Custam.first.id)
   end
 
-  def use_own_custam
+  def __use_own_custam
     update(:active_custam_id => own_custam.id)
   end
 

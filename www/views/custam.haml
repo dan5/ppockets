@@ -1,19 +1,33 @@
+%h2 custam
+
 .custam_menu
   %p
-    ==使用しているテーマは「#{h @player.custam.name}(#{h @player.custam.user.name})」です。
+    ==使用しているテーマは<b>『#{h @player.custam.name}(#{h @player.custam.user.name})』</b>です。
   %ul
     %li= link_to 'デフォルトのテーマを使う', '/cmd/use_default_custam'
-    %li= link_to '自分のカスタマイズテーマを使う', '/cmd/use_own_custam'
-    %li 他ユーザーのカスタマイズテーマを使う
-  %h3 Custam
+    %li= link_to 'カスタマイズテーマを新規作成する', '/custams/new'
+  %h3==#{h @player.name}のカスタマイズデータ
+  %table
+    %tr
+      %th id
+      %th タイトル
+      %th{:colspan=>3} アクション
+    - @player.user.custams.each do |custam|
+      %tr
+        %td.c= custam.id
+        %td= link_to h(custam.name), "/custams/#{custam.uid}"
+        %td= link_to '適用', "/cmd/use_custam/#{custam.uid}"
+        %td= link_to '編集', "/custams/edit/#{custam.id}"
+        %td= link_to '削除', "/custams/delete/#{custam.id}"
+
+  <!--
   %ul
     - c = Custam.find(:user_id => @player.user.id)
     - if c
-      %li= link_to '自分のカスタマイズテーマを編集する', '/custam_edit'
-      %li= link_to '自分のカスタマイズテーマを公開する', "/custam/#{c.uid}"
-      %li= link_to '自分のカスタマイズテーマを削除する', '/custam_delete'
-    - else
-      %li= link_to '自分のカスタマイズテーマを新規作成する', '/custam_edit'
+      %li= link_to 'カスタマイズテーマを編集する', '/custam_edit'
+      %li= link_to 'カスタマイズテーマを公開する', "/custam/#{c.uid}"
+      %li= link_to 'カスタマイズテーマを削除する', '/custam_delete'
+  a -->
 
 %ul.todo
   %li nick等の文字数制限

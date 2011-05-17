@@ -11,7 +11,8 @@ configure :production do
 end
 
 before do
-  load 'core.rb' if development?
+  #load 'core.rb' if development?
+  require 'core.rb' if development?
 end
 
 helpers do
@@ -36,6 +37,7 @@ before do
   # login auth
   if session[:login_password] && user = User.find(:login_password => session[:login_password])
     @player = Player.find_or_create(:user_id => user.id)
+    @user = @player.user
   end
   redirect_logs
   @debug_logs = session[:debug_logs] || []
@@ -95,40 +97,46 @@ get '/logs' do
   haml :logs
 end
 
-get '/custam' do
+get '/custams' do
   return 'please login' unless @player
   haml :custam
 end
 
-get '/custam/:uid' do
-  custam = Custam.find(:uid => params[:uid])
-  return 'cannot found' unless custam
-  haml :custam_show, :locals => {:custam => custam}
+get '/custams/new' do
+  custam = Custam.create(:user_id => @user.id)
+  redirect "/custams/edit/#{custam.id}"
 end
 
-get '/custam_delete' do
+get '/custams/delete/:id' do
   return 'please login' unless @player
   @player.user.delete_own_custam
   redirect '/custam'
 end
 
-get '/custam_edit' do
+get '/custams/edit/:id' do
   return 'please login' unless @player
-  custam = @player.user.own_custam
+  custam = @player.user.custams_dataset.filter(:id => params[:id]).first
   body = Character.names.map {|name|
     c = custam.find_card(name)
     asin = c ? c.asin : nil
     nick = c ? c.nick : nil
     "#{name}\t#{asin}\t#{nick}\n" }.join
-  haml :custam_edit, :locals => {:title => @player.custam.name, :body => body}
+  haml :custam_edit, :locals => {:body => body, :custam => custam}
 end
 
-post '/custam_edit' do
+post '/custams/edit/:id' do
   return 'please login' unless @player
   title, text = params[:title], params[:body]
-  @player.user.own_custam.update(:name =>title)
-  @player.user.own_custam.update_custam_card(text)
-  redirect '/custam_edit'
+  custam = @player.user.custams_dataset.filter(:id => params[:id]).first
+  custam.update(:name =>title)
+  custam.update_custam_card(text)
+  redirect "/custams/edit/#{custam.id}"
+end
+
+get '/custams/:uid' do
+  custam = Custam.find(:uid => params[:uid])
+  return 'cannot found' unless custam
+  haml :custam_show, :locals => {:custam => custam}
 end
 
 get '/new_character' do
@@ -254,17 +262,17 @@ end
 
 get '/cmd/use_custam/:uid' do
   @player.user.use_custam(params[:uid])
-  redirect '/custam'
+  redirect '/custams'
 end
 
 get '/cmd/use_default_custam' do
   @player.user.use_default_custam
-  redirect '/custam'
+  redirect '/custams'
 end
 
 get '/cmd/use_own_custam' do
   @player.user.use_own_custam
-  redirect '/custam'
+  redirect '/custams'
 end
 
 get '/dcmd/run_core' do

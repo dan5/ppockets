@@ -1,9 +1,10 @@
 = haml :_character_style
 
+%h2== custam: #{h custam.name}
 %form.custam_edit{:name => 'simple-form', :method => 'POST'}
   .field
     %label{:for => 'title'} title:
-    %input{:type => 'text', :id => 'subject', :name => 'title', :value => "#{h title}", :size => 40}
+    %input{:type => 'text', :id => 'subject', :name => 'title', :value => "#{h custam.name}", :size => 40}
   .field
     %label{:for => 'body'}
     %textarea{:id => 'body', :name => 'body', :rows => 16, :cols => 80}&=body
@@ -20,7 +21,7 @@
     %th.associate{:colspan=>2} Amazon.co.jpアソシエイト
   - @player.characters_.each do |character|
     - i = character.position
-  - @player.user.custam.custam_cards.each.with_index do |e, i|
+  - custam.custam_cards.each.with_index do |e, i|
     %tr
       %td.c&= i + 1
       %td&= e.nick

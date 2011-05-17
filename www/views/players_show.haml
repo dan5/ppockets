@@ -36,7 +36,7 @@
     %th 勝敗
     %th{:colspan=>2} リーグ
     %th
-    %th{:colspan=>5} amazon.co.jp の関連商品
+    %th.associate{:colspan=>5} Amazon.co.jpアソシエイト
   - @player.recent_games_.limit(5).all.reverse.each do |game|
     - character_logs = game.character_logs_dataset.filter(:player_id => @player.id)
     %tr
