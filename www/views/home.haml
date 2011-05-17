@@ -1,5 +1,4 @@
 = haml :_character_style
-- games = Game.filter('home_player_id = ? OR away_player_id = ?', @player.id, @player.id)
 
 .r
   == Jewels: #{h @player.jewel} / 
@@ -53,56 +52,18 @@
       %td.c.image{:class=>character.name}
         = link_to "<img src='/images/spacer.png'>", "/amazon/#{h item.asin}"
       %td.l.amazoninfo
-        &= item.title
-        %br
-        = link_to 'amazon.co.jp で詳細を見る', item.detailpageurl
+        .cell&= item.title
+        .cell= link_to 'amazon.co.jpで詳細を見る', item.detailpageurl
 
-%h2 Commands
-- if @player.num_commands > 0
-  .memo memo: リーグにエントリしたとき、または試合を行ったあと、次のコマンドを実行できます
-  %ul
-    %li
-      = link_to 'NEW CARD', "/cmd/new_character"
-      %span.memo&= '... 新しいカードを1枚引きます'
-    %li
-      = link_to 'OFF UP', "/cmd/off_up"
-      %span.memo&= '... 攻撃強化を図ります。結果はランダムです'
-    %li
-      = link_to 'DEF UP', "/cmd/def_up"
-      %span.memo&= '... 攻撃強化を図ります。結果はランダムです'
-- else
-  .memo memo: コマンドは実行済みです
-%h2 Status
-%ul
-  %li= link_to "#{h(@player.name)}の公開情報", "/players/#{@player.id}"
-  %li
-    - if league = @player.leagues_dataset.filter('status < 2').order(:id.desc).first
-      = link_to h(league.name), "/leagues/#{league.id}"
-      に参加しています
-      %ul
-        - @player.games_.filter(:league_id => league.id).each do |game|
-          %li
-            &= "#{game.turn_count}試合目"
-            vs
-            = link_to_player game.opponent(@player)
-            - if game.played?
-              &= '... '
-              - s1 = game.home?(@player) ? game.home_score : game.away_score
-              - s2 = game.home?(@player) ? game.away_score : game.home_score
-              - score = "#{h s1} - #{h s2}"
-              = link_to h(score), "/games/#{game.id}"
-              - if game.home_score == game.away_score
-                - res = 'draw'
-              - elsif game.home?(@player)
-                - res = game.home_score > game.away_score ? 'win' : 'lose'
-              - else
-                - res = game.home_score > game.away_score ? 'lose' : 'win'
-              &= res
-    - else
-      リーグには参加していません
-  %li
-    最近参加したリーグ
-    %ul
-      - @player.leagues_dataset.order(:id.desc).limit(3).each do | league|
-        %li
-          = link_to_league league
+%table.home
+  %tr
+    %td.large_associate
+      - item = AmazonItem.find_item('B004INGZAE')
+      - item = AmazonItem.first
+      - item = @custam.custam_cards.first.amazon_item
+      - img_url = item.largeimage_url
+      - img = "<img src='#{img_url}'>"
+      .associate Amazon.co.jpアソシエイト
+      .cell= link_to img, "/amazon/#{h item.asin}"
+      .title&= item.title
+    %td.status= haml :_home_status
