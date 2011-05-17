@@ -168,6 +168,16 @@ class Custam < Sequel::Model
     self.uid = uid
   end
 
+  def amazon_item(key) # todo:
+    idx = {
+      :home => 1,
+      :leagues => 2,
+      :players => 3,
+      :custams => 4,
+    }[key] || 0
+    custam_cards[idx].amazon_item
+  end
+
   def find_card(name)
     #custam_cards_dataset.find(:name => name)
     card = CustamCard.find(:custam_id => id, :name => name)

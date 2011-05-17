@@ -1,4 +1,5 @@
 require 'sequel'
+gem 'amazon-ecs', '1.2.1'
 require 'amazon/ecs'
 
 # -- DB connection

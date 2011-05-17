@@ -12,7 +12,8 @@
     - character_logs.each do |c_home, c_away|
       - turn = c_home.position + 1
       %tr{:class=>"turn#{turn - 1}"}
-        %th.c{:colspan=>4, :width=>600}
+        %th
+        %th.headline
           .turn== TURN #{h turn}
           - case c_home.action
           - when 'comp_agi'
@@ -21,6 +22,7 @@
             == #{h game.home_player.name}の攻撃
           - else
             == #{h game.away_player.name}の攻撃
+        %th
       %tr{:class=>"next_turn#{turn}"}
         %th.c{:colspan=>4}
           open
