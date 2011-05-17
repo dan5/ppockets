@@ -1,11 +1,11 @@
 - @custam_edit = custam
 = haml :_character_style
 
-%h2== custam: #{h custam.name}
+%h2== custam: #{h custam.title}
 %form.custam_edit{:name => 'simple-form', :method => 'POST'}
   .field
     %label{:for => 'title'} title:
-    %input{:type => 'text', :id => 'subject', :name => 'title', :value => "#{h custam.name}", :size => 40}
+    %input{:type => 'text', :id => 'subject', :name => 'title', :value => "#{h custam.title}", :size => 40}
   .field
     %label{:for => 'body'}
     %textarea{:id => 'body', :name => 'body', :rows => 16, :cols => 80}&=body

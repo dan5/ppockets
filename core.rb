@@ -154,7 +154,7 @@ class Custam < Sequel::Model
   set_schema {
     primary_key :id
     foreign_key :user_id, :users
-    String :name, :default => 'no name'
+    String :title, :default => 'none title'
     String :uid, :unique => true
   }
   create_table unless table_exists?
@@ -1050,8 +1050,8 @@ if $0 == __FILE__
 
   run_game_times.times { run_core }
 
-  def update_custam(user, name, text)
-    custam = Custam.find_or_create(:user_id => user.id, :name => name)
+  def update_custam(user, title, text)
+    custam = Custam.find_or_create(:user_id => user.id, :title => title)
     custam.update_custam_card(text)
   end
 

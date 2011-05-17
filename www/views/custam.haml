@@ -2,7 +2,7 @@
 
 .custam_menu
   %p
-    ==使用しているテーマは<b>『#{h @player.custam.name}(#{h @player.custam.user.name})』</b>です。
+    ==使用しているテーマは<b>『#{h @player.custam.title}(#{h @player.custam.user.name})』</b>です。
   %ul
     %li= link_to 'デフォルトのテーマを使う', '/cmd/use_default_custam'
     %li= link_to 'カスタマイズテーマを新規作成する', '/custams/new'
@@ -15,11 +15,15 @@
     - @player.user.custams.each do |custam|
       %tr
         %td.c= custam.id
-        %td= link_to h(custam.name), "/custams/#{custam.uid}"
+        %td= link_to h(custam.title), "/custams/#{custam.uid}"
         %td= link_to '適用', "/cmd/use_custam/#{custam.uid}"
         %td= link_to '編集', "/custams/edit/#{custam.id}"
         %td= link_to '削除', "/custams/delete/#{custam.id}"
 
+  - @items.each do |e|
+    - img_url = e.get('largeimage/url')
+    - img = "<img src='#{img_url}'>"
+    = link_to img, "/amazon/#{h e.get(:asin)}"
   <!--
   %ul
     - c = Custam.find(:user_id => @player.user.id)

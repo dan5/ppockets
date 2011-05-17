@@ -99,6 +99,8 @@ end
 
 get '/custams' do
   return 'please login' unless @player
+  res = Amazon::Ecs.item_search(@custam.title, :search_index => 'All', :response_group => 'Medium')
+  @items = res.items
   haml :custam
 end
 
@@ -128,7 +130,7 @@ post '/custams/edit/:id' do
   return 'please login' unless @player
   title, text = params[:title], params[:body]
   custam = @player.user.custams_dataset.filter(:id => params[:id]).first
-  custam.update(:name =>title)
+  custam.update(:title => title)
   custam.update_custam_card(text)
   redirect "/custams/edit/#{custam.id}"
 end

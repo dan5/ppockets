@@ -1,7 +1,7 @@
 - url = 'http://' + env['HTTP_HOST'] + env['REQUEST_PATH']
 
 %ul
-  %li== title: #{h custam.name}
+  %li== title: #{h custam.title}
   %li== auther: #{h custam.user.name}
   %li== url: #{link_to h(url), h(url)}
 
