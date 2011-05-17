@@ -202,6 +202,10 @@ class CustamCard < Sequel::Model
     String :asin
   }
   create_table unless table_exists?
+
+  def amazon_item
+    AmazonItem.find_item(asin)
+  end
 end
 
 class AmazonItem < Sequel::Model

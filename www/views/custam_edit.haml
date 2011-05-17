@@ -1,3 +1,4 @@
+- @custam_edit = custam
 = haml :_character_style
 
 %h2== custam: #{h custam.name}
@@ -28,7 +29,7 @@
       %td.amazoninfo{:width=>400}
         xxx
       %td
-      - item = e.character(:player => @player).amazon_item
+      - item = e.amazon_item
       %td.c.image{:class=>e.name}
         = link_to "<img src='/images/spacer.png'>", "/amazon/#{h item.asin}"
       %td.l.amazoninfo

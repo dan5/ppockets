@@ -29,6 +29,8 @@
         %hr
         .debug
           == time: #{h game_env.game_time}
-        .debug_commands
-          = link_to 'Run core', "/dcmd/run_core"
+        - if development?
+          .debug_commands
+            = link_to 'Run core', "/dcmd/run_core"
+            = link_to 'Load core', "/dcmd/load_core"
         ppockets

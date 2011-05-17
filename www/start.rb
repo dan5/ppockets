@@ -276,10 +276,15 @@ get '/cmd/use_own_custam' do
 end
 
 get '/dcmd/run_core' do
-  if @player.game_master?
+  if @player.game_master? or development?
     run_core 
     session[:debug_logs] << 'run core'
   end
+  redirect '/'
+end
+
+get '/dcmd/load_core' do
+  load 'core.rb' if @player.game_master? or development?
   redirect '/'
 end
 
