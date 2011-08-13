@@ -39,7 +39,9 @@
 
 == memo
 
-git reset --soft 'HEAD^'
+ git reset --soft 'HEAD^'
+
+ gem install rubytter i18n sqlite3 sequel sinatra sinatra-reloader sinatra_more haml
 
 === production
 
